@@ -37,7 +37,7 @@ function project(x,eta)				#projection onto C = {x in [0,1]^n | median(x) >= eta
 		indices = Int64[]
 		for i in 1:size(x,1)		#count number of elts equal to median
 			if x[i] == med
-				medians++
+				medians+=1
 				append!(indices,i)
 			elseif x[i] > med && x[i] < eta
 				xnew[i] = eta
@@ -47,7 +47,7 @@ function project(x,eta)				#projection onto C = {x in [0,1]^n | median(x) >= eta
 		j = 1
 		while median(xnew) < eta
 			xnew[indices[j]] = eta
-			j++
+			j+=1
 		end
 	end
 	return(xnew)
