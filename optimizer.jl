@@ -1,56 +1,78 @@
-using ForwardDiff, DiffResults, Statistics, QuadGK, LinearAlgebra
+using ForwardDiff, Statistics, QuadGK, LinearAlgebra
 
-tstar = 1.
+function inverse_gramian(A,B,a=0.,b=1.)
+	W,err = quadgk(x -> exp(A*x)*(B*(B'))*(exp(A*x)'),a,b)		#compute reachability gramian
+	inv(factorize(W))
+end						#invert W
 
-x0 = [ -1. -1 0 1 1 ]'
-
-A = [ 0 0 1 0 0 ; 1 0 0 0 0 ; 0 1 0 0 1 ; 0 0 1 0 0 ; 0. 0 0 1 0 ]
-
-B = [ 1. 0 0 0 0 ]'
-
-BBT = B * (B')
-
-fin = exp(A*tstar)*x0
-
-function gram(t)
-	At = exp(A*t)
-	g = At*BBT*(At')
-	return(g)
+function energy(x,x0,M,tlim=1.)			#objective function for minimization
+	fin = exp(A*tlim)*x0
+	((fin - x)' * M * (fin - x))[1]
 end
 
-W,err = quadgk(x -> gram(x), 0, tstar)		#compute reachability gramian
-
-M = inv(W)					#invert W
-
-function energy(x)				#objective function for minimization
-	o = (fin - x)' * M * (fin - x)
-	return(o)
-end
-
-function project(x,eta)				#projection onto C = {x in [0,1]^n | median(x) >= eta}
+function median_projector(x,eta)		#projection onto C = {x in [0,1]^n | median(x) >= eta}
 	med = median(x)
-	if med >= eta
-		xnew = x			#no need to project
-	else
+	xnew = copy(x)
+	n = size(x,1)
+	if med < eta				#otherwise no need to project
 		medians = 0
-		xnew = x
-		indices = Int64[]
-		for i in 1:size(x,1)		#count number of elts equal to median
-			if x[i] == med
+		xnew = copy(x)
+		indices = Int64[]		#stores the indices of elements which are equal to median
+		for i in 1:n			#count number of elts equal to median
+			if x[i] == copy(med)
 				medians+=1
 				append!(indices,i)
 			elseif x[i] > med && x[i] < eta
-				xnew[i] = eta
+				xnew[i] = copy(eta)
 			end
 		end
 		
 		j = 1
-		while median(xnew) < eta
-			xnew[indices[j]] = eta
+		while median(xnew) < eta && j <= n
+			xnew[indices[j]] = copy(eta)
 			j+=1
 		end
 	end
 	return(xnew)
 end
 
-@show project(x0,0.5)
+function gradient(func,x,h=1e-8)
+	it = 1
+	n = size(x,1)
+	grad = Float64[]
+	while it <= n
+		xh = copy(x)
+		xh[it] = x[it] + h
+		append!(grad,(func(xh) - func(x)))
+		it += 1
+	end
+	grad*(1/h)
+end
+
+function pgd_optimizer(objective, projector, state0, max_step_size = 1e-1, crit = 1e-3, maxit = 1000000)
+	diff = crit + 1.
+	it = 0
+	state1 = copy(state0)
+	while diff > crit && it < maxit
+		state0 = copy(state1)
+		grad = gradient(objective,state0)
+		step_size = copy(max_step_size)
+		step = step_size*grad
+		state1 = projector(state0 - step)
+		while objective(state1) - objective(state0) > 0.
+			step_size /= 2
+			step = step_size*grad
+			state1 = projector(state0 - step)
+		end
+		diff = norm(state1 - state0)
+		if it % 100 == 0
+			@show "100"
+		end
+
+		it +=1
+	end
+	if it == maxit
+		@show "Maximum iterations reached"
+	end
+	return(state1)
+end
