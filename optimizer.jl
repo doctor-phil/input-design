@@ -1,4 +1,4 @@
-using ForwardDiff, Statistics, QuadGK, LinearAlgebra
+using ForwardDiff, Statistics, QuadGK, LinearAlgebra, Printf
 
 function inverse_gramian(A,B,a=0.,b=1.)
 	W,err = quadgk(x -> exp(A*x)*(B*(B'))*(exp(A*x)'),a,b)		#compute reachability gramian
@@ -65,14 +65,14 @@ function pgd_optimizer(objective, projector, state0, max_step_size = 1e-1, crit 
 			state1 = projector(state0 - step)
 		end
 		diff = norm(state1 - state0)
-		if it % 100 == 0
-			@show "100"
+		if it % 100 == 0 && it != 0
+			@printf "PGD: %d iterations\n" it
 		end
 
 		it +=1
 	end
 	if it == maxit
-		@show "Maximum iterations reached"
+		@printf "Maximum iterations reached"
 	end
 	return(state1)
 end

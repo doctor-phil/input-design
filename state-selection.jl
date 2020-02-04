@@ -14,4 +14,4 @@ M = inverse_gramian(A,B)
 
 projector(x) = median_projector(x,eta)
 
-@time @show pgd_optimizer(x -> energy(x,x0,M),projector,x0)
+@show @time xstar = pgd_optimizer(x -> energy(x,x0,M),projector,x0)
