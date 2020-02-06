@@ -10,7 +10,7 @@ function energy(x,x0,M,tlim=1.)			#objective function for minimization
 	((fin - x)' * M * (fin - x))[1]
 end
 
-function median_projector(x,eta)		#projection onto C = {x in [0,1]^n | median(x) >= eta}
+function median_projector(x,eta)		#projection onto C = {x in R^n | median(x) >= eta}
 	med = median(x)
 	xnew = copy(x)
 	n = size(x,1)
@@ -36,7 +36,7 @@ function median_projector(x,eta)		#projection onto C = {x in [0,1]^n | median(x)
 	return(xnew)
 end
 
-function gradient(func,x,h=1e-8)
+function gradient(func,x,h=1e-8)		# fixed differences
 	it = 1
 	n = size(x,1)
 	grad = Float64[]
@@ -50,7 +50,7 @@ function gradient(func,x,h=1e-8)
 end
 
 function pgd_optimizer(objective, projector, state0, max_step_size = 1e-1, crit = 1e-5, maxit = 100000)
-	diff = crit + 1.
+	diff = crit + 1.			#performs pgd optimization
 	it = 0
 	state1 = copy(state0)
 	while diff > crit && it < maxit
