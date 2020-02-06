@@ -7,7 +7,7 @@ state-selection.jl contains a sample script and optimizer.jl contains necessary 
 Functions:
 
 inverse_gramian(A,B,a=0.,b=1.)
-This function computes the inverse of the controllability gramian matrix given:\\
+This function computes the inverse of the controllability gramian matrix given:\n
 A = nxn matrix, describing autonomous behavior of linear dynamical system
 B = nxm matrix, describing a control input schematic
 and optionally:
