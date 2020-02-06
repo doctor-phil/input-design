@@ -49,13 +49,13 @@ function gradient(func,x,h=1e-8)
 	grad*(1/h)
 end
 
-function pgd_optimizer(objective, projector, state0, max_step_size = 1e-1, crit = 1e-3, maxit = 1000000)
+function pgd_optimizer(objective, projector, state0, max_step_size = 1e-1, crit = 1e-5, maxit = 100000)
 	diff = crit + 1.
 	it = 0
 	state1 = copy(state0)
 	while diff > crit && it < maxit
 		state0 = copy(state1)
-		grad = gradient(objective,state0)
+		grad = ForwardDiff.gradient(objective,state1)
 		step_size = copy(max_step_size)
 		step = step_size*grad
 		state1 = projector(state0 - step)
@@ -74,5 +74,7 @@ function pgd_optimizer(objective, projector, state0, max_step_size = 1e-1, crit 
 	if it == maxit
 		@printf "Maximum iterations reached"
 	end
+	gradient = ForwardDiff.gradient(objective,state1)
+	@show gradient
 	return(state1)
 end
