@@ -22,6 +22,6 @@ gamma = (sum(xf) - length(xf)*eta) / sum(W)
 
 xstar = xf - W * gamma * ones(length(xf),1)
 
-@time state = pgd_optimizer(x -> energy(x,x0,M),projector,x0)
+@time state = pgd_optimizer(x -> energy(x,x0,M),projector,xstar)
 
 @show state
