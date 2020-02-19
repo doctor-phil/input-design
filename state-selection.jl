@@ -14,6 +14,14 @@ M = inverse_gramian(A,B)
 
 projector(x) = median_projector(x,eta)
 
+xf = exp(A)*x0
+
+W = inv(factorize(M))
+
+gamma = (sum(xf) - length(xf)*eta) / sum(W)
+
+xstar = xf - W * gamma * ones(length(xf),1)
+
 @time state = pgd_optimizer(x -> energy(x,x0,M),projector,x0)
 
 @show state

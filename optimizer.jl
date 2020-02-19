@@ -49,7 +49,7 @@ function gradient(func,x,h=1e-8)		# fixed differences
 	grad*(1/h)
 end
 
-function pgd_optimizer(objective, projector, state0, max_step_size = 1e-1, crit = 1e-5, maxit = 100000)
+function pgd_optimizer(objective, projector, state0, max_step_size = 5e-1, crit = 1e-5, maxit = 100000)
 	diff = crit + 1.			#performs pgd optimization
 	it = 0
 	state1 = copy(state0)
@@ -59,10 +59,12 @@ function pgd_optimizer(objective, projector, state0, max_step_size = 1e-1, crit 
 		step_size = copy(max_step_size)
 		step = step_size*grad
 		state1 = projector(state0 - step)
-		while objective(state1) - objective(state0) > 0.
+		halvings = 0
+		while objective(state1) - objective(state0) > 0. && halvings < 100000
 			step_size /= 2
 			step = step_size*grad
 			state1 = projector(state0 - step)
+			halvings += 1
 		end
 		diff = norm(state1 - state0)
 		if it % 100 == 0 && it != 0
