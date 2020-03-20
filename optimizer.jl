@@ -1,4 +1,4 @@
-using ForwardDiff, Statistics, QuadGK, LinearAlgebra, Printf
+using ForwardDiff, Statistics, QuadGK, LinearAlgebra, Printf #test
 
 function inverse_gramian(A,B,a=0.,b=1.)
 	W,err = quadgk(x -> exp(A*x)*(B*(B'))*(exp(A*x)'),a,b)		#compute reachability gramian
@@ -26,7 +26,7 @@ function median_projector(x,eta)		#projection onto C = {x in R^n | median(x) >= 
 				xnew[i] = copy(eta)
 			end
 		end
-		
+
 		j = 1
 		while median(xnew) < eta && j <= n
 			xnew[indices[j]] = copy(eta)
