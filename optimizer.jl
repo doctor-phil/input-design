@@ -1,4 +1,4 @@
-using ForwardDiff, Statistics, QuadGK, LinearAlgebra, Printf #test
+using ForwardDiff, Statistics, QuadGK, LinearAlgebra, Printf
 
 function inverse_gramian(A,B,a=0.,b=1.)
 	W,err = quadgk(x -> exp(A*x)*(B*(B'))*(exp(A*x)'),a,b)		#compute reachability gramian
