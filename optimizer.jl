@@ -87,10 +87,23 @@ end
 
 
 function min_energy(B,A,x0,eta;t0=0.,t1=1.)
-	n = sqrt(length(A))
-	B = reshape(B,n,length(B)/n)
-	W = gramian(A,B)
+	n = Int(sqrt(length(A)))
+	B = reshape(B,n,Int(length(B)/n))
+	W,err = gramian(A,B)
 
 	me = (sum(exp(A*(t1-t0))*x0) - n*eta)^2 / sum(W)
 	return me
+end
+
+function derivative_N(B,ND)
+	dndb = 4*(tr(B' * B) - ND).*B
+	return dndb
+end
+
+function tangent_projection(Matrix,B,ND)
+	v = reshape(Matrix,length(Matrix),1)
+	S = derivative_N(B,ND)
+	S2 = pinv(S)
+	P = (I - S*S2) * v
+	return P
 end
