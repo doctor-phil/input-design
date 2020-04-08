@@ -107,3 +107,8 @@ function tangent_projection(Matrix,B,ND)
 	P = (I - S*S2) * v
 	return P
 end
+
+function sphere_projection(B,Mpe)
+	G = sqrt(Mpe / tr(B'*B)) *B
+	return G
+end
