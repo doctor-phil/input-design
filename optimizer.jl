@@ -3,7 +3,11 @@ using ForwardDiff, Statistics, QuadGK, LinearAlgebra, Printf
 function inverse_gramian(A,B,a=0.,b=1.)
 	W,err = quadgk(x -> exp(A*x)*(B*(B'))*(exp(A*x)'),a,b)		#compute reachability gramian
 	inv(factorize(W))
-end						#invert W
+end
+
+function gramian(A,B,a=0.,b=1.)
+	W,err = quadgk(x -> exp(A*x)*(B*(B'))*(exp(A*x)'),a,b)	#invert W
+end
 
 function energy(x,x0,M,tlim=1.)			#objective function for minimization
 	fin = exp(A*tlim)*x0
@@ -79,4 +83,14 @@ function pgd_optimizer(objective, projector, state0, max_step_size = 5e-1, crit 
 	gradient = ForwardDiff.gradient(objective,state1)
 	@show gradient
 	return(state1)
+end
+
+
+function min_energy(B,A,x0,eta;t0=0.,t1=1.)
+	n = sqrt(length(A))
+	B = reshape(B,n,length(B)/n)
+	W = gramian(A,B)
+
+	me = (sum(exp(A*(t1-t0))*x0) - n*eta)^2 / sum(W)
+	return me
 end
