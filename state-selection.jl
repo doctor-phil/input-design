@@ -4,7 +4,7 @@ include("./optimizer.jl")
 
 A = [ 0. 0 1 0 0 ; 1 0 0 0 0 ; 0 0.5 0 0 0.5 ; 0 0 1 0 0 ; 0 0 0 1 0 ]
 
-B = [ 1. 0 0 0 0 ]'
+B = [ 1. 0 0 0 0 ; 0 1 0 0 0 ]'
 
 x0 = [ -1. -1 0 1 1 ]'
 
@@ -25,3 +25,8 @@ xstar = xf - W * gamma * ones(length(xf),1)
 @time state = pgd_optimizer(x -> energy(x,x0,M),projector,xstar)
 
 @show state
+
+@time B1,nits = pgme(A,B,x0,eta,2.)
+
+@show min_energy(B,A,x0,eta)
+@show min_energy(B1,A,x0,eta)

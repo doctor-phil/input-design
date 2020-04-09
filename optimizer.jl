@@ -88,8 +88,8 @@ end
 
 function min_energy(B,A,x0,eta;t0=0.,t1=1.)
 	n = Int(sqrt(length(A)))
-	B = reshape(B,n,Int(length(B)/n))
-	W,err = gramian(A,B)
+	B0 = reshape(B,n,Int(length(B)/n))
+	W,err = gramian(A,B0)
 
 	me = (sum(exp(A*(t1-t0))*x0) - n*eta)^2 / sum(W)
 	return me
@@ -102,8 +102,8 @@ end
 
 function tangent_projection(Matrix,B,ND)
 	v = reshape(Matrix,length(Matrix),1)
-	S = derivative_N(B,ND)
-	S2 = pinv(S)
+	S = reshape(derivative_N(B,ND),length(Matrix),1)
+	S2 = reshape(pinv(S),1,length(Matrix))
 	P = (I - S*S2) * v
 	return P
 end
@@ -111,4 +111,27 @@ end
 function sphere_projection(B,Mpe)
 	G = sqrt(Mpe / tr(B'*B)) *B
 	return G
+end
+
+function pgme(A,B0,x0,eta,nD;tol=1e-20,initstep=0.01)
+	M = nD + 1e-10
+	B1 = sphere_projection(B0,M)
+	n = Int(sqrt(length(A)))
+	m = Int(length(B)/n)
+	objective(x) = min_energy(x,A,x0,eta)
+	costheta = 0.
+	numits = 0
+	while 1-costheta > tol
+		step = copy(initstep)
+		B0 = copy(B1)
+		B0V = reshape(B0,length(B0),1)
+		grad = ForwardDiff.gradient(objective,B0V)
+		proj_grad = tangent_projection(grad,B0,M)
+		inter = B0V - step*proj_grad
+		B1 = sphere_projection(reshape(inter,n,m),M)
+		B1V = reshape(B1,length(B1),1)
+		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
+		numits+=1
+	end
+	return B1,numits
 end
