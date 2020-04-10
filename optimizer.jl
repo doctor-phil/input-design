@@ -53,7 +53,7 @@ function gradient(func,x,h=1e-8)		# fixed differences
 	grad*(1/h)
 end
 
-function pgd_optimizer(objective, projector, state0, max_step_size = 5e-1, crit = 1e-5, maxit = 100000)
+function pgd_optimizer(objective, projector, state0; max_step_size = 5e-1, crit = 1e-5, maxit = 100000)
 	diff = crit + 1.			#performs pgd optimization
 	it = 0
 	state1 = copy(state0)
@@ -71,17 +71,12 @@ function pgd_optimizer(objective, projector, state0, max_step_size = 5e-1, crit 
 			halvings += 1
 		end
 		diff = norm(state1 - state0)
-		if it % 100 == 0 && it != 0
-			@printf "PGD: %d iterations\n" it
-		end
-
 		it +=1
 	end
 	if it == maxit
 		@printf "Maximum iterations reached"
 	end
 	gradient = ForwardDiff.gradient(objective,state1)
-	@show gradient
 	return(state1)
 end
 
@@ -119,6 +114,29 @@ function pgme(A,B0,x0,eta,nD;tol=1e-20,initstep=0.01)
 	n = Int(sqrt(length(A)))
 	m = Int(length(B)/n)
 	objective(x) = min_energy(x,A,x0,eta)
+	costheta = 0.
+	numits = 0
+	while 1-costheta > tol
+		step = copy(initstep)
+		B0 = copy(B1)
+		B0V = reshape(B0,length(B0),1)
+		grad = ForwardDiff.gradient(objective,B0V)
+		proj_grad = tangent_projection(grad,B0,M)
+		inter = B0V - step*proj_grad
+		B1 = sphere_projection(reshape(inter,n,m),M)
+		B1V = reshape(B1,length(B1),1)
+		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
+		numits+=1
+	end
+	return B1,numits
+end
+
+function nested_pgm(A,B0,x0,eta,nD;tol=1e-5,initstep=0.01)
+	M = nD + 1e-10
+	B1 = sphere_projection(B0,M)
+	n = Int(sqrt(length(A)))
+	m = Int(length(B)/n)
+	objective(x) = energy(pgd_optimizer(y -> energy(y,x0,inverse_gramian(A,reshape(x,n,m))),projector,xstar),x0,inverse_gramian(A,reshape(x,n,m)))
 	costheta = 0.
 	numits = 0
 	while 1-costheta > tol
