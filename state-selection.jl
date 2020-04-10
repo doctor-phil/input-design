@@ -32,4 +32,3 @@ xstar = xf - W * gamma * ones(length(xf),1)
 @show min_energy(B1,A,x0,eta)
 
 @time B2, numits = nested_pgm(A,B,x0,eta,2.)   #this takes about an hour eek
-alph = [ 0.1 0.2 0.3 1 0 9 ; 3 2345 ; s]
