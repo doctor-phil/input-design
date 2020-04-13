@@ -83,9 +83,12 @@ end
 
 function min_energy(B,A,x0,eta;t0=0.,t1=1.)
 	n = Int(sqrt(length(A)))
-	B0 = reshape(B,n,Int(length(B)/n))
+	if length(B) > n
+		B0 = reshape(B,n,Int(length(B)/n))
+	else
+		B0 = copy(B)
+	end
 	W,err = gramian(A,B0)
-
 	me = (sum(exp(A*(t1-t0))*x0) - n*eta)^2 / sum(W)
 	return me
 end
@@ -112,7 +115,7 @@ function pgm(A,B0,x0,eta,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,return_its=false
 	M = nD + 1e-10
 	B1 = sphere_projection(B0,M)
 	n = Int(sqrt(length(A)))
-	m = Int(length(B)/n)
+	m = Int(length(B0)/n)
 	objective(x) = min_energy(x,A,x0,eta,t0=t0,t1=t1)
 	costheta = 0.
 	numits = 0
