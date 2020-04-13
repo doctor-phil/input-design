@@ -53,7 +53,7 @@ function gradient(func,x,h=1e-8)		# fixed differences
 	grad*(1/h)
 end
 
-function pgd_optimizer(objective, projector, state0; max_step_size = 5e-1, crit = 1e-5, maxit = 100000)
+function pgd_optimizer(objective, projector, state0; max_step_size = 1e-5, crit = 1e-5, maxit = 100000)
 	diff = crit + 1.			#performs pgd optimization
 	it = 0
 	state1 = copy(state0)
@@ -108,12 +108,12 @@ function sphere_projection(B,Mpe)
 	return G
 end
 
-function pgme(A,B0,x0,eta,nD;tol=1e-20,initstep=0.01)
+function pgm(A,B0,x0,eta,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,return_its=false)
 	M = nD + 1e-10
 	B1 = sphere_projection(B0,M)
 	n = Int(sqrt(length(A)))
 	m = Int(length(B)/n)
-	objective(x) = min_energy(x,A,x0,eta)
+	objective(x) = min_energy(x,A,x0,eta,t0=t0,t1=t1)
 	costheta = 0.
 	numits = 0
 	while 1-costheta > tol
@@ -128,7 +128,11 @@ function pgme(A,B0,x0,eta,nD;tol=1e-20,initstep=0.01)
 		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
 		numits+=1
 	end
-	return B1,numits
+	if return_its
+		return B1,numits
+	else
+		return B1
+	end
 end
 
 function nested_pgm(A,B0,x0,eta,nD;tol=1e-5,initstep=0.01)

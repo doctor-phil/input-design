@@ -26,9 +26,12 @@ xstar = xf - W * gamma * ones(length(xf),1)
 
 @show state
 
-@time B1,nits = pgme(A,B,x0,eta,2.)
+@time B1,nits = pgm(A,B,x0,eta,2.,return_its=true)
 
 @show min_energy(B,A,x0,eta)
 @show min_energy(B1,A,x0,eta)
 
+@time B3, nits2 = pgm(A,B,x0,eta,2.,t0=0.,t1=100.,return_its=true)
+
 @time B2, numits = nested_pgm(A,B,x0,eta,2.)   #this takes about an hour eek
+# returns B2 =
