@@ -160,3 +160,60 @@ function nested_pgm(A,B0,x0,eta,nD;tol=1e-5,initstep=0.01)
 	end
 	return B1,numits
 end
+
+function controllability_matrix(A,B)
+	n = length(A[:,1])
+	C = copy(B)
+	for i = 1:n-1
+		C = [ C (A^i)*B ]
+	end
+	return C
+end
+
+function project(a,b)	#project vec a onto vec b
+	v = (dot(a,b)/dot(b,b))*b
+	return v
+end
+
+function orthonormalize(C) #gram schmidt procedure
+	C = Matrix(C)
+	n = length(C[1,:])
+	m = length(C[:,1])
+	r = fakerank(C)
+	D = copy(C[:,1])
+	E = copy(D) ./ norm(D)
+	i=1
+	j=1
+	while fakerank(D) < r
+		i+=1
+		if fakerank([ D C[:,i] ]) > fakerank(D)
+			d = copy(C[:,i])
+			for k=1:j
+				d -= project(C[:,i],D[:,k])
+			end
+			D = [ D d ]
+			E = [ E (d./norm(d))]
+			j+=1
+		end
+	end
+	return E
+end
+
+function fakerank(A)	#because julia can't take the rank of a vector annoying
+	if length(A[1,:]) > 1
+		r = rank(A)
+	else
+		r = 1
+	end
+	return r
+end
+
+function proj_into_space(v,C) #project v into span(C)
+	D = orthonormalize(C)
+	m = length(D[1,:])
+	u = Float64.(zeros(length(v)))
+	for i = 1:m
+		u += project(v,D[:,i])
+	end
+	return u
+end
