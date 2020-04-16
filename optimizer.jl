@@ -46,11 +46,11 @@ function gradient(func,x,h=1e-8)		# fixed differences
 	grad = Float64[]
 	while it <= n
 		xh = copy(x)
-		xh[it] = x[it] + h
+		xh[it] = copy(x[it]) + h
 		append!(grad,(func(xh) - func(x)))
 		it += 1
 	end
-	grad*(1/h)
+	return grad .* (1/h)
 end
 
 function pgd_optimizer(objective, projector, state0; max_step_size = 1e-5, crit = 1e-5, maxit = 100000)
@@ -217,3 +217,69 @@ function proj_into_space(v,C) #project v into span(C)
 	end
 	return u
 end
+
+function delta(A,B,x0)
+	del = exp(A)*x0
+	del .-= proj_into_space(exp(A)*x0,controllability_matrix(A,B))
+	return del
+end
+
+function num_reachable(A,BV,x0)
+	n = length(A[1,:])
+	m = Int(length(BV)/n)
+	del = delta(A,reshape(BV,n,m),x0)
+	count = 0
+	for i = 1:length(x0)
+		if del[i] == 0
+			count += 1
+		end
+	end
+	return count
+end
+
+function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,return_its=false)
+	objective(x) = obj(x)
+	M = nD + 1e-10
+	B1 = sphere_projection(B0,M)
+	B1V = reshape(B1,length(B0),1)
+	n = Int(sqrt(length(A)))
+	m = Int(length(B0)/n)
+	costheta = 0.
+	numits = 0
+	while 1-costheta > tol
+		step = copy(initstep)
+		B0 = copy(B1)
+		B0V = reshape(B0,length(B0),1)
+		grad = gradient(objective,B0V)		#fixed differences
+		proj_grad = tangent_projection(grad,B0,M)
+		inter = B0V .- step*proj_grad
+		B1 = sphere_projection(reshape(inter,n,m),M)
+		B1V = reshape(B1,length(B1),1)
+		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
+		numits+=1
+	end
+	if return_its
+		return round.(B1,digits=8),objective(round.(B1V,digits=8)),numits
+	else
+		return round.(B1,digits=8),objective(round.(B1V,digits=8))
+	end
+end
+
+
+#TEST SCRIPT
+
+function u(t,A,B,x0;M=inverse_gramian(A,B),xf=proj_into_space(exp(A)*x0,controllability_matrix(A,B)))
+   u = -B' * exp(A*(1. - t))' * M*xf
+   return u
+end
+
+A = [1 0 0 0 ; 1 0 0 0 ; 1 1 0 0 ; 0 0 1 0. ];
+B0 = [ 1; 0; 0; 0. ];
+x0 = [ 1; 0.5; 0; 0 ];
+obj(x) = -num_reachable(A,x,x0)
+@time b1, ob, nits = general_objective_pgm(obj,A,B0,x0,1.,return_its=true)
+@show b1 = sphere_projection(b1,1+1e-8)
+
+using Plots
+
+plot(t -> u(t,A,b1,x0)[1],0.,1.)
