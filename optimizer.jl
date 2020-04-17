@@ -215,13 +215,13 @@ function proj_into_space(v,C) #project v into span(C)
 	for i = 1:m
 		u += project(v,D[:,i])
 	end
-	return u
+	return round.(u,digits=5)
 end
 
 function delta(A,B,x0)
 	del = exp(A)*x0
 	del .-= proj_into_space(exp(A)*x0,controllability_matrix(A,B))
-	return del
+	return round.(del,digits=5)
 end
 
 function num_reachable(A,BV,x0)
@@ -268,13 +268,13 @@ end
 
 #TEST SCRIPT
 
-function u(t,A,B,x0;M=inverse_gramian(A,B),xf=proj_into_space(exp(A)*x0,controllability_matrix(A,B)))
-   u = -B' * exp(A*(1. - t))' * M*xf
+function u(t,A,B,x0;tf=1.,M=inverse_gramian(A,B),xf=Float64.(zeros(length(x0))))
+   u = -B' * exp(A*(tf - t))' * M*(x0-xf)
    return u
 end
 
-A = [1 0 0 0 ; 1 0 0 0 ; 1 1 0 0 ; 0 0 1 0. ];
-B0 = [ 1; 0; 0; 0. ];
+A = [1 0 0 0 ; 0 1 0 0 ; 0.5 0.5 0 0 ; 0 0 1 0. ];
+B0 = [ 1 0; 0 1; 0 0; 0 0. ];
 x0 = [ 1; 0.5; 0; 0 ];
 obj(x) = -num_reachable(A,x,x0)
 @time b1, ob, nits = general_objective_pgm(obj,A,B0,x0,1.,return_its=true)
@@ -282,4 +282,14 @@ obj(x) = -num_reachable(A,x,x0)
 
 using Plots
 
-plot(t -> u(t,A,b1,x0)[1],0.,1.)
+plot(t -> u(t,A,b1,x0,M=inverse_gramian(A,b1))[1],0.,1.)
+
+function trajectory(A,B,t,x0)
+	x,err = quadgk(z -> exp((t-z).*A)*B*u(z,A,B,x0),0,t)
+	return (x0 .+ x )
+end
+
+plot()
+for i=1:4
+	plot!(t-> trajectory(A,b1,t,x0)[i],0,1)
+end
