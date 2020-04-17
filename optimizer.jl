@@ -268,28 +268,66 @@ end
 
 #TEST SCRIPT
 
-function u(t,A,B,x0;tf=1.,M=inverse_gramian(A,B),xf=Float64.(zeros(length(x0))))
-   u = -B' * exp(A*(tf - t))' * M*(x0-xf)
-   return u
+function u(t,A,B,x0;tf=1.,xf=Float64.(zeros(length(x0))))
+	W,err = gramian(A,B)
+	u = -B' * exp(A*(tf - t))' * pinv(W)*(x0-xf)
+	return u
 end
 
 A = [1 0 0 0 ; 0 1 0 0 ; 0.5 0.5 0 0 ; 0 0 1 0. ];
-B0 = [ 1 0; 0 1; 0 0; 0 0. ];
+B0 = [ 1; 0 ; 0; 0. ];
 x0 = [ 1; 0.5; 0; 0 ];
 obj(x) = -num_reachable(A,x,x0)
-@time b1, ob, nits = general_objective_pgm(obj,A,B0,x0,1.,return_its=true)
+@time b1, ob, nits = general_objective_pgm(obj,A,B0,x0,1.;return_its=true)
 @show b1 = sphere_projection(b1,1+1e-8)
-
+xf = Float64.(zeros(length(x0)))
 using Plots
 
-plot(t -> u(t,A,b1,x0,M=inverse_gramian(A,b1))[1],0.,1.)
+plot(t -> u(t,A,b1,x0)[1],0.,1.)
 
-function trajectory(A,B,t,x0)
-	x,err = quadgk(z -> exp((t-z).*A)*B*u(z,A,B,x0),0,t)
-	return (x0 .+ x )
+function trajectory(A,B,t,x0,xf=Float64.(zeros(length(x0))))
+	x,err = quadgk(z -> exp((t-z).*A)*B*u(z,A,B,x0,xf=xf),0,t)
+	return (x .+x0)
 end
 
 plot()
 for i=1:4
 	plot!(t-> trajectory(A,b1,t,x0)[i],0,1)
 end
+
+function norm_input(u,xf,x0,tf,A,B)
+	q,err = quadgk(t -> norm(u(t,A,B,x0,tf=tf,xf=xf)),0.,tf)
+	return q
+end
+
+obj(x) = norm_input(u,xf,x0,1.,A,reshape(x,length(x0),Int(length(x)/length(x0))))
+
+function general_objective_pgm_autodiff(obj,A,B0,x0,nD;tol=1e-20,initstep=0.1,t0=0.,t1=1.,return_its=false)
+	objective(x) = obj(x)
+	M = nD + 1e-10
+	B1 = sphere_projection(B0,M)
+	B1V = reshape(B1,length(B0),1)
+	n = Int(sqrt(length(A)))
+	m = Int(length(B0)/n)
+	costheta = 0.
+	numits = 0
+	while 1-costheta > tol
+		step = copy(initstep)
+		B0 = copy(B1)
+		B0V = reshape(B0,length(B0),1)
+		grad = ForwardDiff.gradient(objective,B0V)		#fixed differences
+		proj_grad = tangent_projection(grad,B0,M)
+		inter = B0V .- step*proj_grad
+		B1 = sphere_projection(reshape(inter,n,m),M)
+		B1V = reshape(B1,length(B1),1)
+		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
+		numits+=1
+	end
+	if return_its
+		return round.(B1,digits=8),objective(round.(B1V,digits=8)),numits
+	else
+		return round.(B1,digits=8),objective(round.(B1V,digits=8))
+	end
+end
+
+b1, its = general_objective_pgm(obj,A,b1,x0,1.)
