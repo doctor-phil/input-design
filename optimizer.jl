@@ -274,25 +274,9 @@ function u(t,A,B,x0;tf=1.,xf=Float64.(zeros(length(x0))))
 	return u
 end
 
-A = [1 0 0 0 ; 0 1 0 0 ; 0.5 0.5 0 0 ; 0 0 1 0. ];
-B0 = [ 1; 0 ; 0; 0. ];
-x0 = [ 1; 0.5; 0; 0 ];
-obj(x) = -num_reachable(A,x,x0)
-@time b1, ob, nits = general_objective_pgm(obj,A,B0,x0,1.;return_its=true)
-@show b1 = sphere_projection(b1,1+1e-8)
-xf = Float64.(zeros(length(x0)))
-using Plots
-
-plot(t -> u(t,A,b1,x0)[1],0.,1.)
-
 function trajectory(A,B,t,x0,xf=Float64.(zeros(length(x0))))
 	x,err = quadgk(z -> exp((t-z).*A)*B*u(z,A,B,x0,xf=xf),0,t)
 	return (x .+x0)
-end
-
-plot()
-for i=1:4
-	plot!(t-> trajectory(A,b1,t,x0)[i],0,1)
 end
 
 function norm_input(u,xf,x0,tf,A,B)
@@ -300,13 +284,22 @@ function norm_input(u,xf,x0,tf,A,B)
 	return q
 end
 
-obj(x) = norm_input(u,xf,x0,1.,A,reshape(x,length(x0),Int(length(x)/length(x0))))
+function pinv_gramian(A,B;a=0.,b=1.)
+	W,err = quadgk(x -> exp(A*x)*(B*(B'))*(exp(A*x)'),a,b)		#compute reachability gramian
+	return pinv(W)
+end
 
-function general_objective_pgm_autodiff(obj,A,B0,x0,nD;tol=1e-20,initstep=0.1,t0=0.,t1=1.,return_its=false)
-	objective(x) = obj(x)
+function grad_EB(A,B;a=0.,b=1.)
+	WBinv = pinv_gramian(A,B;a=a,b=b)
+	C(t) = exp(A*(t))*WBinv*(exp(A*(t))')
+	CTC(t) = C(t)' *C(t)
+	q,err = quadgk(t -> CTC(t),a,b)
+	return -2*q*B
+end
+
+function pgm_max_sync(A,B0,nD;tol=1e-10,initstep=0.01,t0=0.,t1=1.,return_its=false)
 	M = nD + 1e-10
 	B1 = sphere_projection(B0,M)
-	B1V = reshape(B1,length(B0),1)
 	n = Int(sqrt(length(A)))
 	m = Int(length(B0)/n)
 	costheta = 0.
@@ -315,19 +308,21 @@ function general_objective_pgm_autodiff(obj,A,B0,x0,nD;tol=1e-20,initstep=0.1,t0
 		step = copy(initstep)
 		B0 = copy(B1)
 		B0V = reshape(B0,length(B0),1)
-		grad = ForwardDiff.gradient(objective,B0V)		#fixed differences
+		grad = reshape(grad_EB(A,B0),length(B0),1)
 		proj_grad = tangent_projection(grad,B0,M)
-		inter = B0V .- step*proj_grad
+		inter = B0V - step*proj_grad
 		B1 = sphere_projection(reshape(inter,n,m),M)
 		B1V = reshape(B1,length(B1),1)
 		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
 		numits+=1
 	end
 	if return_its
-		return round.(B1,digits=8),objective(round.(B1V,digits=8)),numits
+		return B1,numits
 	else
-		return round.(B1,digits=8),objective(round.(B1V,digits=8))
+		return B1
 	end
 end
 
-b1, its = general_objective_pgm(obj,A,b1,x0,1.)
+@time b2 = pgm_max_sync(A,b1,1)
+
+@show b2
