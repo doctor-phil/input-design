@@ -72,3 +72,9 @@ plot!(t -> quadgk(x -> norm(u(x,A,b2,x0)),0,t)[1],0.,1.)
 
 plot(t -> norm_input(u,xf,x0,t,A,b1),0.,1.)
 plot!(t -> norm_input(u,xf,x0,t,A,b2),0.,1.)
+
+plot()
+for i=1:4
+	plot!(t-> trajectory(A,b2,t,x0)[i],0,1)
+end
+plot!()

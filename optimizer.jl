@@ -254,6 +254,7 @@ function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1
 		proj_grad = tangent_projection(grad,B0,M)
 		inter = B0V .- step*proj_grad
 		B1 = sphere_projection(reshape(inter,n,m),M)
+		B1 = ifelse()
 		B1V = reshape(B1,length(B1),1)
 		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
 		numits+=1
@@ -310,6 +311,10 @@ function pgm_max_sync(A,B0,nD;tol=1e-5,initstep=0.001,t0=0.,t1=1.,return_its=fal
 		inter = B0V - step*proj_grad
 		B1 = sphere_projection(reshape(inter,n,m),M)
 		B1V = reshape(B1,length(B1),1)
+		if num_reachable(A,B1V,x0) < num_reachable(A,B0V,x0)
+			B1 = copy(B0)
+			B1V = copy(B0V)
+		end
 		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
 		numits+=1
 	end
