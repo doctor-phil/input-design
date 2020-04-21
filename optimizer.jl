@@ -265,9 +265,6 @@ function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1
 	end
 end
 
-
-#TEST SCRIPT
-
 function u(t,A,B,x0;tf=1.,xf=Float64.(zeros(length(x0))))
 	W,err = gramian(A,B)
 	u = -B' * exp(A*(tf - t))' * pinv(W)*(x0-xf)
@@ -289,15 +286,15 @@ function pinv_gramian(A,B;a=0.,b=1.)
 	return pinv(W)
 end
 
-function grad_EB(A,B;a=0.,b=1.)
+function grad_EB(A,B,x0;a=0.,b=1.)
 	WBinv = pinv_gramian(A,B;a=a,b=b)
-	C(t) = exp(A*(t))*WBinv*(exp(A*(t))')
-	CTC(t) = C(t)' *C(t)
+	Xf = exp(A*(b-a)) * x0 * x0' * exp(A*(b-a))'
+	CTC(t) = exp(A*t)' * WBinv * Xf * WBinv * exp(A*t)
 	q,err = quadgk(t -> CTC(t),a,b)
-	return -2*q*B
+	return q*B
 end
 
-function pgm_max_sync(A,B0,nD;tol=1e-10,initstep=0.01,t0=0.,t1=1.,return_its=false)
+function pgm_max_sync(A,B0,nD;tol=1e-5,initstep=0.001,t0=0.,t1=1.,return_its=false)
 	M = nD + 1e-10
 	B1 = sphere_projection(B0,M)
 	n = Int(sqrt(length(A)))
@@ -308,7 +305,7 @@ function pgm_max_sync(A,B0,nD;tol=1e-10,initstep=0.01,t0=0.,t1=1.,return_its=fal
 		step = copy(initstep)
 		B0 = copy(B1)
 		B0V = reshape(B0,length(B0),1)
-		grad = reshape(grad_EB(A,B0),length(B0),1)
+		grad = reshape(grad_EB(A,B0,x0),length(B0),1)
 		proj_grad = tangent_projection(grad,B0,M)
 		inter = B0V - step*proj_grad
 		B1 = sphere_projection(reshape(inter,n,m),M)
@@ -322,7 +319,3 @@ function pgm_max_sync(A,B0,nD;tol=1e-10,initstep=0.01,t0=0.,t1=1.,return_its=fal
 		return B1
 	end
 end
-
-@time b2 = pgm_max_sync(A,b1,1)
-
-@show b2

@@ -55,3 +55,14 @@ for i=1:4
 	end
 end
 plot!()
+
+
+@time b2 = pgm_max_sync(A,b1,1.)
+
+@show b2
+
+@show energy(xf,x0,pinv_gramian(A,b1))
+@show energy(xf,x0,pinv_gramian(A,b2))
+
+plot(t -> u(t,A,b1,x0)[1],0.,1.)
+plot!(t -> u(t,A,b2,x0)[1],0.,1.)
