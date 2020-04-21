@@ -66,3 +66,9 @@ plot!()
 
 plot(t -> u(t,A,b1,x0)[1],0.,1.)
 plot!(t -> u(t,A,b2,x0)[1],0.,1.)
+
+plot(t -> quadgk(x -> norm(u(x,A,b1,x0)),0,t)[1],0.,1.)
+plot!(t -> quadgk(x -> norm(u(x,A,b2,x0)),0,t)[1],0.,1.)
+
+plot(t -> norm_input(u,xf,x0,t,A,b1),0.,1.)
+plot!(t -> norm_input(u,xf,x0,t,A,b2),0.,1.)
