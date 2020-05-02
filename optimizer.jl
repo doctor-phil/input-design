@@ -326,6 +326,7 @@ end
 
 function gtilde(A,B,x0)
 	n = length(x0)
+	B = reshape(B,n,Int(length(B)/n))
 	gt = 1.
 	pj = proj_into_space(x0,controllability_matrix(A,B))
 	for i=1:n
