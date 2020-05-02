@@ -262,9 +262,9 @@ function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-10,initstep=0.01,t0=0.,t1=1
 		numits+=1
 	end
 	if return_its
-		return round.(B1,digits=8),obj(round.(B1V,digits=8)),numits
+		return B1,obj(round.(B1V,digits=8)),numits
 	else
-		return round.(B1,digits=8),obj(round.(B1V,digits=8))
+		return B1,obj(round.(B1V,digits=8))
 	end
 end
 

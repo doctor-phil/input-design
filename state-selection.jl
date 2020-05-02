@@ -37,7 +37,7 @@ xstar = xf - W * gamma * ones(length(xf),1)
 # returns B2 =
 
 A = [1 0 0 0 ; 0 1 0 0 ; 0.5 0.5 0 0 ; 0 0 1 0. ];
-B0 = [ 1 ; 0 ; 0 ;0 ];
+B0 = [ 1. ; 1.05 ; 0.99 ; 1];
 x0 = [ 1.0; 0.5; 0; 0 ];
 obj(x) = gtilde(A,x,x0)
 @time b1, ob, nits = general_objective_pgm(obj,A,B0,x0,1.;return_its=true)
