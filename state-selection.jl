@@ -4,7 +4,6 @@ include("./optimizer.jl")
 
 A = [ 0. 0 1 0 0 ; 1 0 0 0 0 ; 0 0.5 0 0 0.5 ; 0 0 1 0 0 ; 0 0 0 1 0 ]
 
-
 B = [ 1. 0 0 0 0 ; 0 1 0 0 0 ]'
 
 x0 = [ -1. -1 0 1 1 ]'
@@ -38,9 +37,9 @@ xstar = xf - W * gamma * ones(length(xf),1)
 # returns B2 =
 
 A = [1 0 0 0 ; 0 1 0 0 ; 0.5 0.5 0 0 ; 0 0 1 0. ];
-B0 = [ 1; 0 ; 0; 0. ];
+B0 = [ 1 ; 0 ; 0 ;0 ];
 x0 = [ 1.0; 0.5; 0; 0 ];
-obj(x) = -num_reachable(A,x,x0)
+obj(x) = gtilde(A,x,x0)
 @time b1, ob, nits = general_objective_pgm(obj,A,B0,x0,1.;return_its=true)
 @show b1 = sphere_projection(b1,1+1e-8)
 xf = Float64.(zeros(length(x0)))
@@ -51,9 +50,7 @@ plot(t -> u(t,A,b1,x0)[1],0.,1.)
 
 plot()
 for i=1:4
-	if i != 2
 		plot!(t-> trajectory(A,b1,t,x0)[i],0,1)
-	end
 end
 plot!()
 

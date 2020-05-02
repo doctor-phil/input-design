@@ -237,8 +237,7 @@ function num_reachable(A,BV,x0)
 	return count
 end
 
-function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,return_its=false)
-	objective(x) = obj(x)
+function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-20,initstep=1.,t0=0.,t1=1.,return_its=false)
 	M = nD + 1e-10
 	B1 = sphere_projection(B0,M)
 	B1V = reshape(B1,length(B0),1)
@@ -250,7 +249,8 @@ function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1
 		step = copy(initstep)
 		B0 = copy(B1)
 		B0V = reshape(B0,length(B0),1)
-		grad = gradient(objective,B0V)		#fixed differences
+		grad = gradient(obj,B0V)		#fixed differences
+		@show grad
 		proj_grad = tangent_projection(grad,B0,M)
 		inter = B0V .- step*proj_grad
 		B1 = sphere_projection(reshape(inter,n,m),M)
@@ -259,9 +259,9 @@ function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1
 		numits+=1
 	end
 	if return_its
-		return round.(B1,digits=8),objective(round.(B1V,digits=8)),numits
+		return round.(B1,digits=8),obj(round.(B1V,digits=8)),numits
 	else
-		return round.(B1,digits=8),objective(round.(B1V,digits=8))
+		return round.(B1,digits=8),obj(round.(B1V,digits=8))
 	end
 end
 
@@ -330,9 +330,7 @@ function gtilde(A,B,x0)
 	gt = 0.
 	pj = proj_into_space(x0,controllability_matrix(A,B))
 	for i=1:n
-		if x0[i] == 0
-			gt += 1
-		else
+		if x0[i] != 0
 			gt += ((x0[i] - pj[i]) / x0[i])^2
 		end
 	end
