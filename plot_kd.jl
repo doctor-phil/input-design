@@ -1,4 +1,4 @@
-using Plots, ControlSystems
+using Plots
 f(x) = 1. .-x.^2
 plot(f,-1,1,color=:black,linestyle=:dash,label="",minorgrid=false,grid=false,legendfont=(18,"times"))
 x = [ -1; 0; 0; 0; 0; 1]

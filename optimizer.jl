@@ -323,3 +323,17 @@ function pgm_max_sync(A,B0,nD;tol=1e-5,initstep=0.001,t0=0.,t1=1.,return_its=fal
 		return B1
 	end
 end
+
+function gtilde(A,B,x0)
+	n = length(x0)
+	gt = 1.
+	pj = proj_into_space(x0,controllability_matrix(A,B))
+	for i=1:n
+		if x0[i] == 0
+			gt -= 1
+		else
+			gt -= (x0[i] - pj[i]) / x0[i]
+		end
+	end
+	return gt
+end
