@@ -254,7 +254,6 @@ function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1
 		proj_grad = tangent_projection(grad,B0,M)
 		inter = B0V .- step*proj_grad
 		B1 = sphere_projection(reshape(inter,n,m),M)
-		B1 = ifelse()
 		B1V = reshape(B1,length(B1),1)
 		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
 		numits+=1

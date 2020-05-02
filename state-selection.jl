@@ -57,7 +57,7 @@ end
 plot!()
 
 
-@time b2 = pgm_max_sync(A,b2,1.)
+@time b2 = pgm_max_sync(A,b1,1.)
 
 @show b2
 
