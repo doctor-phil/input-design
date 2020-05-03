@@ -238,10 +238,10 @@ function num_reachable(A,BV,x0)
 end
 
 function control_pinv(x0,C)
-	return C' * pinv(C * C') * x0
+	return pinv(C' * C) * C' * x0
 end
 
-function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-10,initstep=0.01,t0=0.,t1=1.,return_its=false)
+function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,return_its=false)
 	M = nD + 1e-10
 	B1 = sphere_projection(B0,M)
 	B1V = reshape(B1,length(B0),1)
@@ -327,11 +327,24 @@ function pgm_max_sync(A,B0,nD;tol=1e-5,initstep=0.001,t0=0.,t1=1.,return_its=fal
 	end
 end
 
-function gtilde(A,B,x0)
+function gtilde1(A,B,x0)
 	n = length(x0)
 	B = reshape(B,n,Int(length(B)/n))
 	gt = 0.
 	pj = control_pinv(x0,controllability_matrix(A,B))
+	for i=1:n
+		if x0[i] != 0
+			gt += ((x0[i] - pj[i]) / x0[i])^2
+		end
+	end
+	return gt
+end
+
+function gtilde2(A,B,x0)
+	n = length(x0)
+	B = reshape(B,n,Int(length(B)/n))
+	gt = 0.
+	pj = proj_into_space(x0,controllability_matrix(A,B))
 	for i=1:n
 		if x0[i] != 0
 			gt += ((x0[i] - pj[i]) / x0[i])^2
