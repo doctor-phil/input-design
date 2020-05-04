@@ -238,7 +238,7 @@ function num_reachable(A,BV,x0)
 end
 
 function control_pinv(x0,C)
-	return pinv(C' * C) * C' * x0
+	return pinv(C) * x0
 end
 
 function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,return_its=false)
