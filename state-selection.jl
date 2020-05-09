@@ -33,7 +33,7 @@ xstar = xf - W * gamma * ones(length(xf),1)
 
 @time B3, nits2 = pgm(A,B,x0,eta,2.,t0=0.,t1=100.,return_its=true)
 
-@time B2, numits = nested_pgm(A,B,x0,eta,2.)   #this takes about an hour eek
+#@time B2, numits = nested_pgm(A,B,x0,eta,2.)   #this takes about an hour eek
 # returns B2 =
 
 A = [1 0 0 0 ; 0 1 0 0 ; 0.5 0.5 0 0 ; 0 0 1 0. ];
@@ -50,15 +50,26 @@ using Plots
 
 plot(t -> u(t,A,b1,x0)[1],0.,1.)
 
+C = controllability_matrix(A,b1)
+CTC = C' * C
+@show eigen(CTC)
+W,err = gramian(A,b1)
+@show eigen(W)
+@show rank(W)
 
-plt = plot(1,xlim = (0,1),ylim = (-2,2))
-@gif for i=1:1500
-	for i=1:4
-		push!(plt, Float64(i/1500), t-> trajectory(A,b1,i/1500,x0)[i])
-	end
-end every 10
+plt = plot()
+for j=1:4
+	plot!(plt, i -> trajectory(A,b1,i,x0)[j], 0, 1.)
+end
 plot!()
 
+p = plot([trajectory], zeros(0), leg = false, xlim=(0,1),ylim=(-2,2))
+anim = Animation()
+for x = range(0, stop = 1, length = 100)
+    push!(p, x, Float64[trajectory(A,b1,x,x0)[1], trajectory(A,b1,x,x0)[2], trajectory(A,b1,x,x0)[3], trajectory(A,b1,x,x0)[4]])
+    frame(anim)
+end
+gif(anim)
 
 @time b2 = pgm_max_sync(A,b1,1.)
 
