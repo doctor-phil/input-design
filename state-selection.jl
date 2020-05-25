@@ -63,14 +63,6 @@ for j=1:4
 end
 plot!()
 
-p = plot([trajectory], zeros(0), leg = false, xlim=(0,1),ylim=(-2,2))
-anim = Animation()
-for x = range(0, stop = 1, length = 100)
-    push!(p, x, Float64[trajectory(A,b1,x,x0)[1], trajectory(A,b1,x,x0)[2], trajectory(A,b1,x,x0)[3], trajectory(A,b1,x,x0)[4]])
-    frame(anim)
-end
-gif(anim)
-
 @time b2 = pgm_max_sync(A,b1,1.)
 
 @show b2
