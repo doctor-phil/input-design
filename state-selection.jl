@@ -3,6 +3,7 @@ include("./optimizer.jl")
 #sample script for controllable state selection
 
 A = [ 0. 0 1 0 0 ; 1 0 0 0 0 ; 0 0.5 0 0 0.5 ; 0 0 1 0 0 ; 0 0 0 1 0 ]
+#A = [ 0. 0 1 0 0 ; 1 0 0 0 0 ; 0 1 0 0 1 ; 0 0 1 0 0 ; 0 0 0 1 0 ]
 
 B = [ 1. 0 0 0 0 ; 0 1 0 0 0 ]'
 
@@ -37,14 +38,14 @@ xstar = xf - W * gamma * ones(length(xf),1)
 # returns B2 =
 
 A = [1 0 0 0 ; 0 1 0 0 ; 0.5 0.5 0 0 ; 0 0 1 0. ];
-B0 = [ 1. ; 1.05 ; 0.99 ; 1];
+B0 = [ 1. ; 0.02 ; .5 ; 0.7];
 x0 = [ 1.0; 0.5; 0; 0 ];
 obj(x) = gtilde1(A,x,x0)
 @time b1, ob, nits = general_objective_pgm(obj,A,B0,x0,1.;return_its=true)
 @show b1 = sphere_projection(b1,1+1e-8)
 obj2(x) = gtilde2(A,x,x0)
 @time b2, ob, nits = general_objective_pgm(obj2,A,B0,x0,1.;return_its=true)
-@show b1 = sphere_projection(b2,1+1e-8)
+@show b2 = sphere_projection(b2,1+1e-8)
 xf = Float64.(zeros(length(x0)))
 using Plots
 
@@ -59,7 +60,7 @@ W,err = gramian(A,b1)
 
 plt = plot()
 for j=1:4
-	plot!(plt, i -> trajectory(A,b1,i,x0)[j], 0, 1.)
+	plot!(plt, i -> trajectory(A,b2,i,x0)[j], 0, 1.)
 end
 plot!()
 
