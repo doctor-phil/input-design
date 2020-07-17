@@ -46,6 +46,9 @@ obj(x) = gtilde1(A,x,x0)
 obj2(x) = gtilde2(A,x,x0)
 @time b2, ob, nits = general_objective_pgm(obj2,A,B0,x0,1.;return_its=true)
 @show b2 = sphere_projection(b2,1+1e-8)
+obj3(x) = gtilde3(A,x,x0)
+@time b3, ob, nits = general_objective_pgm(obj3,A,B0,x0,1.;return_its=true)
+@show b3 = sphere_projection(b3,1+1e-8)  #gives the same result... coincidence?
 xf = Float64.(zeros(length(x0)))
 using Plots
 

@@ -352,3 +352,14 @@ function gtilde2(A,B,x0)
 	end
 	return gt
 end
+
+function gtilde3(A,B,x0)
+	n = length(x0)
+	B = reshape(B,n,Int(length(B)/n))
+	gt = 0.
+	pj = proj_into_space(x0,controllability_matrix(A,B))
+	for i=1:n
+		gt += ((x0[i] - pj[i])^2)
+	end
+	return gt
+end
