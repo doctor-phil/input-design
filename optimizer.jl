@@ -6,7 +6,8 @@ function inverse_gramian(A,B,a=0.,b=1.)
 end
 
 function gramian(A,B,a=0.,b=1.)
-	W,err = quadgk(x -> exp(A*x)*(B*(B'))*(exp(A*x)'),a,b)	#invert W
+	W,err = quadgk(x -> exp(A*x)*(B*(B'))*(exp(A*x)'),a,b)
+	return W
 end
 
 function energy(x,x0,M,tlim=1.)			#objective function for minimization
@@ -54,7 +55,7 @@ function gradient(func,x,h=1e-8)		# fixed differences
 end
 
 function pgd_optimizer(objective, projector, state0; max_step_size = 1e-5, crit = 1e-5, maxit = 100000)
-	diff = crit + 1.			#performs pgd optimization
+	diff = crit + 1.			#performs pgd optimization (minimization)
 	it = 0
 	state1 = copy(state0)
 	while diff > crit && it < maxit
@@ -88,7 +89,7 @@ function min_energy(B,A,x0,eta;t0=0.,t1=1.)
 	else
 		B0 = copy(B)
 	end
-	W,err = gramian(A,B0)
+	W = gramian(A,B0)
 	me = (sum(exp(A*(t1-t0))*x0) - n*eta)^2 / sum(W)
 	return me
 end
@@ -241,7 +242,7 @@ function control_pinv(x0,C)
 	return pinv(C) * x0
 end
 
-function general_objective_pgm(obj,A,B0,x0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,return_its=false)
+function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,return_its=false)
 	M = nD + 1e-10
 	B1 = sphere_projection(B0,M)
 	B1V = reshape(B1,length(B0),1)
@@ -365,7 +366,52 @@ function gtilde3(A,B,x0)
 end
 
 function flow_matrix(A;a=0.,b=1.)
-	on = ones(length(A[1,:]),1)
-	M,err = quadgk(x -> exp(A*x)*(on*on')*(exp(A*x)'),a,b)
+	M,err = quadgk(x -> exp(A*x)*(exp(A*x)'),a,b)
 	return M
+end
+
+function gram_sum(A,B)
+	W = gramian(A,B)
+	return sum(W)
+end
+
+function gram_sum_vec(A,B)
+	n = Int(sqrt(length(A)))
+	if length(B) > n
+		m = Int(length(B)/n)
+		B0 = reshape(B,n,m)
+	else
+		m = 1
+		B0 = copy(B)
+	end
+	W = gramian(A,B0)
+	s = sum(W)
+	return s
+end
+
+function pgm2(A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,return_its=false)
+	M = nD + 1e-10
+	B1 = sphere_projection(B0,M)
+	n = Int(sqrt(length(A)))
+	m = Int(length(B0)/n)
+	objective(x) = -gram_sum_vec(A,x)
+	costheta = 0.
+	numits = 0
+	while 1-costheta > tol
+		step = copy(initstep)
+		B0 = copy(B1)
+		B0V = reshape(B0,length(B0),1)
+		grad = ForwardDiff.gradient(objective,B0V)
+		proj_grad = tangent_projection(grad,B0,M)
+		inter = B0V - step*proj_grad
+		B1 = sphere_projection(reshape(inter,n,m),M)
+		B1V = reshape(B1,length(B1),1)
+		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
+		numits+=1
+	end
+	if return_its
+		return B1,numits
+	else
+		return B1
+	end
 end

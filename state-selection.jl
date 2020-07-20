@@ -11,6 +11,8 @@ x0 = [ -1. -1 0 1 1 ]'
 
 eta = 0.5
 
+@time bigb = pgm2(A,B,2)
+
 M = inverse_gramian(A,B)
 
 projector(x) = median_projector(x,eta)
@@ -31,6 +33,7 @@ xstar = xf - W * gamma * ones(length(xf),1)
 
 @show min_energy(B,A,x0,eta)
 @show min_energy(B1,A,x0,eta)
+@show min_energy(bigb,A,x0,eta)
 
 @time B3, nits2 = pgm(A,B,x0,eta,2.,t0=0.,t1=100.,return_its=true)
 
@@ -41,13 +44,13 @@ A = [1 0 0 0 ; 0 1 0 0 ; 0.5 0.5 0 0 ; 0 0 1 0. ];
 B0 = [ 1. ; 0.02 ; .5 ; 0.7];
 x0 = [ 1.0; 0.5; 0; 0 ];
 obj(x) = gtilde1(A,x,x0)
-@time b1, ob, nits = general_objective_pgm(obj,A,B0,x0,1.;return_its=true)
+@time b1, ob, nits = general_objective_pgm(obj,A,B0,1.;return_its=true)
 @show b1 = sphere_projection(b1,1+1e-8)
 obj2(x) = gtilde2(A,x,x0)
-@time b2, ob, nits = general_objective_pgm(obj2,A,B0,x0,1.;return_its=true)
+@time b2, ob, nits = general_objective_pgm(obj2,A,B0,1.;return_its=true)
 @show b2 = sphere_projection(b2,1+1e-8)
 obj3(x) = gtilde3(A,x,x0)
-@time b3, ob, nits = general_objective_pgm(obj3,A,B0,x0,1.;return_its=true)
+@time b3, ob, nits = general_objective_pgm(obj3,A,B0,1.;return_its=true)
 @show b3 = sphere_projection(b3,1+1e-8)  #gives the same result... coincidence?
 xf = Float64.(zeros(length(x0)))
 using Plots
