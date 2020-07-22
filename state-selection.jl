@@ -12,7 +12,12 @@ x0 = [ -1. -1 0 1 1 ]'
 
 eta = 0.5
 
+a,v = eigen(flow_matrix(A))
+@show testb = [ v[:,4] v[:,5] ]
+
 @time bigb = pgm2(A,testb,2)
+
+testb2 = [ v[:,1] v[:,1] ]
 
 M = inverse_gramian(A,B)
 
@@ -34,7 +39,9 @@ xstar = xf - W * gamma * ones(length(xf),1)
 
 @show min_energy(B,A,x0,eta)
 @show min_energy(B1,A,x0,eta)
-@show min_energy(bigb,A,x0,eta)
+@show min_energy(testb2,A,x0,eta)
+@show min_energy(testb4,A,x0,eta)
+@show min_energy(testest,A,x0,eta)
 
 @time B3, nits2 = pgm(A,B,x0,eta,2.,t0=0.,t1=100.,return_its=true)
 
