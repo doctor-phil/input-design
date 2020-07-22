@@ -366,7 +366,9 @@ function gtilde3(A,B,x0)
 end
 
 function flow_matrix(A;a=0.,b=1.)
-	M,err = quadgk(x -> exp(A*x)*(exp(A*x)'),a,b)
+	n = length(A[1,:])
+	on = ones(n,1)
+	M,err = quadgk(x -> (exp(A*x)' *(on*on')*(exp(A*x))),a,b)
 	return M
 end
 
