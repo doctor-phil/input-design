@@ -14,10 +14,8 @@ eta = 0.5
 
 a,v = eigen(flow_matrix(A))
 @show testb = [ v[:,4] v[:,5] ]
-
-@time bigb = pgm2(A,testb,2)
-
 testb2 = [ v[:,1] v[:,1] ]
+@time testb3 = pgm2(A,testb,2)
 
 M = inverse_gramian(A,B)
 
