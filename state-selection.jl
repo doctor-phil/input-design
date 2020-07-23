@@ -38,8 +38,6 @@ xstar = xf - W * gamma * ones(length(xf),1)
 @show min_energy(B,A,x0,eta)
 @show min_energy(B1,A,x0,eta)
 @show min_energy(testb2,A,x0,eta)
-@show min_energy(testb4,A,x0,eta)
-@show min_energy(testest,A,x0,eta)
 
 @time B3, nits2 = pgm(A,B,x0,eta,2.,t0=0.,t1=100.,return_its=true)
 
@@ -49,6 +47,18 @@ xstar = xf - W * gamma * ones(length(xf),1)
 A = [1 0 0 0 ; 0 1 0 0 ; 0.5 0.5 0 0 ; 0 0 1 0. ];
 B0 = [ 1. ; 0.02 ; .5 ; 0.7];
 x0 = [ 1.0; 0.5; 0; 0 ];
+
+a,v = eigen(flow_matrix(A))
+@show testb = [ v[:,4] v[:,4] ]
+testb2 = [ v[:,1] v[:,2] ]
+@time testb3 = pgm2(A,testb,2)
+@time B1,nits = pgm(A,B0,x0,eta,2.,return_its=true)
+
+@show min_energy(B0,A,x0,eta)
+@show min_energy(B1,A,x0,eta)
+@show min_energy(testb,A,x0,eta)
+@show min_energy(testb2,A,x0,eta)
+
 obj(x) = gtilde1(A,x,x0)
 @time b1, ob, nits = general_objective_pgm(obj,A,B0,1.;return_its=true)
 @show b1 = sphere_projection(b1,1+1e-8)
