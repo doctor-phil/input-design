@@ -44,13 +44,14 @@ xstar = xf - W * gamma * ones(length(xf),1)
 #@time B2, numits = nested_pgm(A,B,x0,eta,2.)   #this takes about an hour eek
 # returns B2 =
 
-A = [1 0 0 0 ; 0 1 0 0 ; 0.5 0.5 0 0 ; 0 0 1 0. ];
+A = [-1 0 0 0 ; -1 0 0 0 ; 0.3 0.5 0 0 ; 0 0 1 0. ];
 B0 = [ 1. ; 0.02 ; .5 ; 0.7];
 x0 = [ 1.0; 0.5; 0; 0 ];
 
 a,v = eigen(flow_matrix(A))
-@show testb = [ v[:,4] v[:,4] ]
+@show testb = [ v[:,1] v[:,1] ]
 testb2 = [ v[:,1] v[:,2] ]
+testb4 = [ v[:,1] v[:,4] ]
 @time testb3 = pgm2(A,testb,2)
 @time B1,nits = pgm(A,B0,x0,eta,2.,return_its=true)
 
@@ -68,10 +69,11 @@ obj2(x) = gtilde2(A,x,x0)
 obj3(x) = gtilde3(A,x,x0)
 @time b3, ob, nits = general_objective_pgm(obj3,A,B0,1.;return_its=true)
 @show b3 = sphere_projection(b3,1+1e-8)  #gives the same result... coincidence?
-xf = Float64.(zeros(length(x0)))
+xfin = optimal_mean_state(testb,A,eta,x0)
 using Plots
 
-plot(t -> u(t,A,b1,x0)[1],0.,1.)
+plot(t -> u(t,A,testb4,x0,xf = xfin)[1],0.,1.)
+plot!(t -> u(t,A,testb4,x0,xf = xfin)[2],0.,1.)
 
 C = controllability_matrix(A,b1)
 CTC = C' * C
@@ -82,8 +84,9 @@ W,err = gramian(A,b1)
 
 plt = plot()
 for j=1:4
-	plot!(plt, i -> trajectory(A,b2,i,x0)[j], 0, 1.)
+	plot!(plt, i -> trajectory(A,testb,i,x0,xf=xfin)[j], 0, 1.)
 end
+plot!(plt, i -> sum(trajectory(A,testb,i,x0,xf=xfin))/4, 0, 1.)
 plot!()
 
 @time b2 = pgm_max_sync(A,b1,1.)
