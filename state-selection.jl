@@ -70,11 +70,6 @@ obj2(x) = gtilde2(A,x,x0)
 obj3(x) = gtilde3(A,x,x0)
 @time b3, ob, nits = general_objective_pgm(obj3,A,B0,1.;return_its=true)
 @show b3 = sphere_projection(b3,1+1e-8)  #gives the same result... coincidence?
-xfin = optimal_mean_state(testb,A,eta,x0)
-using Plots
-
-plot(t -> u(t,A,testb,x0,xf = xfin)[1],0.,1.)
-plot!(t -> u(t,A,testb,x0,xf = xfin)[2],0.,1.)
 
 C = controllability_matrix(A,b1)
 CTC = C' * C
@@ -84,11 +79,20 @@ W,err = gramian(A,b1)
 @show rank(W)
 
 M = pinv(gramian(A,testb))
+
+using Plots, PlotThemes
+theme(:solarized)
+eta = 5
+xfin = optimal_mean_state(testb,A,eta,x0)
+
+plot(t -> u(t,A,testb,x0,xf = xfin)[1],0.,1.)
+plot!(t -> u(t,A,testb,x0,xf = xfin)[2],0.,1.)
+
 plt = plot()
 for j=1:4
-	plot!(plt, i -> trajectory(A,testb,i,x0,M,xfi=xfin)[j], 0, 1.)
+	plot!(plt, i -> trajectory(A,testb,i,x0,M,xfi=xfin)[j], 0, 2.)
 end
-plot!(plt, i -> sum(trajectory(A,testb,i,x0,M,xfi=xfin))/4, 0, 1.)
+plot!(plt, i -> sum(trajectory(A,testb,i,x0,M,xfi=xfin))/4, 0, 2.,label="average")
 plot!()
 
 @time b2 = pgm_max_sync(A,b1,1.)

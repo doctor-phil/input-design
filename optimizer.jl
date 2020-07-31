@@ -270,7 +270,11 @@ function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,r
 end
 
 function u(t,A,B,x0,M;tf=1.,xf=Float64.(zeros(length(x0))))
-	u = B' * exp(A*(tf - t))' * M*(xf .- exp(A*tf)*x0)
+	if t <= tf
+		u = B' * exp(A*(tf - t))' * M*(xf .- exp(A*tf)*x0)
+	else
+		u = zeros(length(B[1,:]),1)
+	end
 	return u
 end
 
