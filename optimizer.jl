@@ -270,14 +270,14 @@ function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,r
 end
 
 function u(t,A,B,x0;tf=1.,xf=Float64.(zeros(length(x0))))
-	W,err = gramian(A,B)
-	u = -B' * exp(A*(tf - t))' * pinv(W)*(x0-xf)
+	W = gramian(A,B)
+	u = B' * exp(A*(tf - t))' * pinv(W)*(xf .- exp(A*tf)*x0)
 	return u
 end
 
-function trajectory(A,B,t,x0;xf=Float64.(zeros(length(x0))))
-	x,err = quadgk(z -> exp((t-z).*A)*B*u(z,A,B,x0,xf=xf),0,t)
-	return exp(t.*A)*x0 .+ x
+function trajectory(A,B,t,x0;xfi=Float64.(zeros(length(x0))))
+	x,err = quadgk(z -> exp((t-z).*A)*B*u(z,A,B,x0,xf=xfi),0,t)
+	return exp(t*A)*x0 .+ x
 end
 
 function norm_input(u,xf,x0,tf,A,B)
@@ -431,6 +431,6 @@ function optimal_mean_state(B,A,eta,x0;t0=0.,t1=1.)
 	on = ones(n,1)
 	denom = gram_sum(A,B)
 	alpha = sum(v) - n*eta
-	xa = v .- ((alpha)^2/denom)*gramian(A,B)*on
+	xa = v .- (alpha/denom)*gramian(A,B)*on
 	return xa
 end
