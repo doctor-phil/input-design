@@ -83,11 +83,12 @@ W,err = gramian(A,b1)
 @show eigen(W)
 @show rank(W)
 
+M = pinv(gramian(A,testb))
 plt = plot()
 for j=1:4
-	plot!(plt, i -> trajectory(A,zeros(4,2),i,x0,xfi=xfin)[j], 0, 1.)
+	plot!(plt, i -> trajectory(A,testb,i,x0,M,xfi=xfin)[j], 0, 1.)
 end
-plot!(plt, i -> sum(trajectory(A,testb,i,x0,xfi=xfin))/4, 0, 1.)
+plot!(plt, i -> sum(trajectory(A,testb,i,x0,M,xfi=xfin))/4, 0, 1.)
 plot!()
 
 @time b2 = pgm_max_sync(A,b1,1.)

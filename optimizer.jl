@@ -269,14 +269,13 @@ function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,r
 	end
 end
 
-function u(t,A,B,x0;tf=1.,xf=Float64.(zeros(length(x0))))
-	W = gramian(A,B)
-	u = B' * exp(A*(tf - t))' * pinv(W)*(xf .- exp(A*tf)*x0)
+function u(t,A,B,x0,M;tf=1.,xf=Float64.(zeros(length(x0))))
+	u = B' * exp(A*(tf - t))' * M*(xf .- exp(A*tf)*x0)
 	return u
 end
 
-function trajectory(A,B,t,x0;xfi=Float64.(zeros(length(x0))))
-	x,err = quadgk(z -> exp((t-z).*A)*B*u(z,A,B,x0,xf=xfi),0,t)
+function trajectory(A,B,t,x0,M;xfi=Float64.(zeros(length(x0))))
+	x,err = quadgk(z -> (exp((t-z)*A)*B*u(z,A,B,x0,M,xf=xfi)),0,t,rtol=1e-7)
 	return exp(t*A)*x0 .+ x
 end
 
