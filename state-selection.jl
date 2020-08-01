@@ -82,7 +82,7 @@ M = pinv(gramian(A,testb))
 
 using Plots, PlotThemes
 theme(:solarized)
-eta = 5
+eta = -5
 xfin = optimal_mean_state(testb,A,eta,x0)
 
 plot(t -> u(t,A,testb,x0,xf = xfin)[1],0.,1.)
