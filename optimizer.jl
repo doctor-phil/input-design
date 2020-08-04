@@ -398,7 +398,7 @@ function flow_ev(A;a=0.,b=1.)
 	n = length(A[1,:])
 	on = ones(n,1)
 	a,err = quadgk(x -> (exp(A*x)' *on),a,b)
-	return a	#not *exactly* right yet
+	return a
 end
 
 function pgm2(A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,return_its=false)
