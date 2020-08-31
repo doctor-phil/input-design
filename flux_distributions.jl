@@ -5,7 +5,7 @@ using CSV, Plots, DataFrames, DelimitedFiles
 A = Float64.(Matrix(CSV.read("powernet.csv";header=false))) - I
 
 #@time Phi = flow_matrix(A)
-#takes about an hour... not bad?
+#takes about an hour... not bad?.. (that's including compilation)
 
 #@time lambda, v = eigen(Phi)
 
@@ -13,14 +13,56 @@ A = Float64.(Matrix(CSV.read("powernet.csv";header=false))) - I
 
 #writedlm("fluxcent.csv",fluxcentrality,',')
 
-phi = Float64.(Matrix(CSV.read("fluxcent.csv";header=false)))
+A = Float64.(Matrix(CSV.read("alzheimers_structural_brain_network.csv";header=false)))
 
-on = ones(5300)
+@time Phi = flow_matrix(A)
 
-L = zeros(5300,5300)
+@time lambda, v = eigen(Phi)
 
-L[diagind(L)] = A' *on
+flux = -real(v[:,1])
 
-L = L - A
+writedlm("fluxcent_alzheimers.csv",flux,',')
 
-lam, v = eigen(A)
+histogram(flux)
+
+A = Float64.(Matrix(CSV.read("karate.csv";header=false)))
+
+@time Phi = flow_matrix(A)
+
+@time lambda, v = eigen(Phi)
+flux = zeros(34,5)
+flux[:,2] = real(v[:,1])
+
+Phi = flow_matrix(A,b=0.001)
+lambda, v = eigen(Phi)
+flux[:,1] = real(v[:,1])
+
+Phi = flow_matrix(A,b=0.01)
+lambda, v = eigen(Phi)
+flux[:,2] = -real(v[:,1])
+
+Phi = flow_matrix(A,b=0.1)
+lambda, v = eigen(Phi)
+flux[:,3] = -real(v[:,1])
+
+Phi = flow_matrix(A,b=1)
+lambda, v = eigen(Phi)
+flux[:,4] = -real(v[:,2])
+
+Phi = flow_matrix(A,b=10)
+lambda, v = eigen(Phi)
+flux[:,5] = -real(v[:,2])
+
+writedlm("fluxcent_karate.csv",flux,',')
+
+A = Float64.(Matrix(CSV.read("celegans.csv";header=false)))
+
+@time Phi = flow_matrix(A)
+
+@time lambda, v = eigen(Phi)
+
+flux = real(v[:,1])
+
+writedlm("fluxcent_celegans.csv",flux,',')
+
+histogram(flux)
