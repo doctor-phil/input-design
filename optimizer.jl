@@ -437,3 +437,67 @@ function optimal_mean_state(B,A,eta,x0;t0=0.,t1=1.)
 	xa = v .- (alpha/denom)*gramian(A,B)*on
 	return xa
 end
+
+function opt_sort(x,W)
+	n = length(x)
+	u,v = eigen(W)
+	lambda,ind = findmax(u)
+	vmax = v[:,ind]
+	oldi = Int32.(zeros(n))
+	newi = Int32.(zeros(n))
+	xnew = copy(x)
+
+	for i=1:n
+		for j=1:n
+			if x[j] <= x[i]
+				newi[i]+=1
+			end
+		end
+	end
+
+	for i = 1:n
+		for j = 1:n
+			if i!=j
+				if newi[i] == newi[j]
+					if vmax[i] > vmax[j]
+						newi[j]-=1
+					elseif vmax[i] == vmax[j]
+						if i > j
+							newi[j]-=1
+						else
+							newi[i]-=1
+						end
+					else
+						newi[i]-=1
+					end
+				end
+			end
+		end
+	end
+
+	for i=1:n
+		xnew[newi[i]] = x[i]
+		oldi[newi[i]] = i
+	end
+
+	return xnew, oldi
+end
+
+function proj_median_state(x,W,eta;t0=0.,t1=1.)
+	n = length(x)
+	sorted, oldi = opt_sort(x,W)
+	term = 0
+	xnew = copy(x)
+	i = Int32(floor(n/2))
+
+	while term==0
+		i+=1
+		if i <= n && sorted[i] < eta
+			xnew[oldi[i]] = eta
+		else
+			term = 1
+		end
+	end
+
+	return xnew
+end
