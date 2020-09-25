@@ -501,3 +501,25 @@ function proj_median_state(x,W,eta;t0=0.,t1=1.)
 
 	return xnew
 end
+
+function med_nested_pgm(A,B0,x0,eta,nD;tol=1e-5,initstep=0.01)
+	M = nD + 1e-10
+	B1 = sphere_projection(B0,M)
+	n = Int(sqrt(length(A)))
+	m = Int(length(B)/n)
+	objective(x) = energy(pgd_optimizer(y -> energy(y,x0,inverse_gramian(A,reshape(x,n,m))),x -> proj_median_state(x,gramian(A,reshape(x,n,m))),xstar),x0,inverse_gramian(A,reshape(x,n,m)))
+	costheta = 0.
+	numits = 0
+	while costheta > 1-tol
+		step = copy(initstep)
+		B0 = copy(B1)
+		B0V = reshape(B0,length(B0),1)
+		grad = ForwardDiff.gradient(objective,B0V)
+		proj_grad = tangent_projection(grad,B0,M)
+		B1 = sphere_projection(reshape(B0V - step*proj_grad,n,m),M)
+		B1V = reshape(B1,length(B1),1)
+		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
+		numits+=1
+	end
+	return B1,numits
+end
