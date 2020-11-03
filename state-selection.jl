@@ -46,10 +46,10 @@ xstar = xf - W * gamma * ones(length(xf),1)
 
 A = [-0.5 0 0 0 ; -0.5 0 0 0 ; 0.3 0.5 0 0 ; 0 0 1 0. ];
 B0 = rand(4);
-x0 = [ 1.0; 0.5; 0; 0 ];
+x0 = [ 1.0; 0.5; 0.25; -1 ];
 
-a,v = eigen(flow_matrix(A))
-@show testb = [ v[:,1] v[:,1] ]
+a,v = eigen(flow_matrix(A,a=0,b=15.))
+@show testb = [ v[:,4] v[:,4] ]
 testb2 = [ v[:,1] v[:,2] ]
 testb4 = [ v[:,1] v[:,4] ]
 testb5 = [ v[:,3] v[:,4] ]
@@ -78,37 +78,39 @@ W,err = gramian(A,b1)
 @show eigen(W)
 @show rank(W)
 
-M = pinv(gramian(A,testb))
+M = pinv(gramian(A,testb,0.,15.))
 
 using Plots, PlotThemes
 
-eta = 0.5
-xfin = optimal_mean_state(testb,A,eta,x0)
+eta = 1.
+xfin = optimal_mean_state(testb,A,eta,x0,t1=15.)
 
-plot(t -> u(t,A,testb,x0,M,xf = xfin)[1],0.,1.)
-plot!(t -> u(t,A,testb,x0,M,xf = xfin)[2],0.,1.)
+plot(t -> u(t,A,testb,x0,M,tf=15.,xf = xfin)[1],0.,15.)
+plot!(t -> u(t,A,testb,x0,M,tf=15.,xf = xfin)[2],0.,15.)
 
 plt = plot()
 for j=1:4
-	plot!(plt, i -> trajectory(A,testb,i,x0,M,xfi=xfin)[j], 0, 1.,label=false)
+	plot!(plt, i -> trajectory(A,testb,i,x0,M,xfi=xfin)[j], 0, 1.,label="")
 end
 plot!(plt, i -> sum(trajectory(A,testb,i,x0,M,xfi=xfin))/4, 0, 1.,label="Average",linecolor=:black, linestyle=:dash)
 plot!()
 
-xfin2 = optimal_mean_state(testb,A,eta,x0,t1=10.)
+xfin2 = optimal_mean_state(testb,A,eta,x0,t1=15.)
 plt2 = plot()
 for j=1:4
-	plot!(plt2, i -> trajectory(A,testb,i,x0,M,xfi=xfin2)[j], 0, 10.,label="")
+	plot!(plt2, i -> trajectory(A,testb,i,x0,M,t1=15.,xfi=xfin2)[j], 0, 15.,label="")
 end
-plot!(plt2, i -> sum(trajectory(A,testb,i,x0,M,xfi=xfin2))/4, 0, 10.,label="Average",linecolor=:black, linestyle=:dash)
+plot!(plt2, i -> sum(trajectory(A,testb,i,x0,M,t1=15.,xfi=xfin2))/4, 0, 15.,label="Average",linecolor=:black, linestyle=:dash)
 plot!()
+savefig(plt2,"controlled.pdf")
 
 plt3 = plot()
 for j=1:4
-	plot!(plt3, i -> trajectory(A,zeros(4,2),i,x0,M,xfi=xfin2)[j], 0, 10.,label="")
+	plot!(plt3, i -> trajectory(A,zeros(4,2),i,x0,M,xfi=xfin2)[j], 0, 15.,label="")
 end
-plot!(plt3, i -> sum(trajectory(A,zeros(4,2),i,x0,M,xfi=xfin2))/4, 0, 10.,label="Average",linecolor=:black, linestyle=:dash)
+plot!(plt3, i -> sum(trajectory(A,zeros(4,2),i,x0,M,xfi=xfin2))/4, 0, 15.,label="Average",linecolor=:black, linestyle=:dash)
 plot!()
+savefig(plt3,"autonomous.pdf")
 
 @time b2 = pgm_max_sync(A,b1,1.)
 

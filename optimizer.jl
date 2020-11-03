@@ -278,8 +278,8 @@ function u(t,A,B,x0,M;tf=1.,xf=Float64.(zeros(length(x0))))
 	return u
 end
 
-function trajectory(A,B,t,x0,M;xfi=Float64.(zeros(length(x0))),tf= 1.)
-	x,err = quadgk(z -> (exp((t-z)*A)*B*u(z,A,B,x0,M,xf=xfi,tf=tf)),0,t,rtol=1e-7)
+function trajectory(A,B,t,x0,M;xfi=Float64.(zeros(length(x0))),t1= 1.)
+	x,err = quadgk(z -> (exp((t-z)*A)*B*u(z,A,B,x0,M,tf=t1,xf=xfi)),0,t,rtol=1e-7)
 	return exp(t*A)*x0 .+ x
 end
 
