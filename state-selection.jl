@@ -136,7 +136,7 @@ savefig(plt4,"inputs.pdf")
 
 
 ninp_rand(t) = (u(t,A,randb,x0,M,tf=15.,xf = xfin3)[1])^2 + (u(t,A,randb,x0,M,tf=15.,xf = xfin3)[2])^2
-plt5 = plot(t -> quadgk(a -> ninp_rand(a),0.,t)[1],0.,15.,label="RAM",linestyle=:dash,legend=:topleft,linecolor=:black,linewidth=2,ylabel="Cumulative Input Energy",xlabel="t")
+plt5 = plot(t -> quadgk(a -> ninp_rand(a),0.,t)[1],0.,15.,label="RAM",linestyle=:dash,legend=:topleft,linecolor=:black,linewidth=2,ylabel="Cumulative Input Energy",xlabel="t",legendfontsize=14,tickfontsize=14,guidefontsize=14)
 ninp_opt(t) = (u(t,A,testb,x0,M,tf=15.,xf = xfin2)[1])^2 + (u(t,A,testb,x0,M,tf=15.,xf = xfin2)[2])^2
 plot!(plt5,t -> quadgk(a -> ninp_opt(a),0.,t)[1],0.,15.,label="Flux",linestyle=:solid,linecolor=:black,linewidth=2)
 savefig(plt5,"energies.pdf")
