@@ -91,7 +91,7 @@ plt = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefon
 for j=1:4
 	plot!(plt, i -> trajectory(A,testb,i,x0,M,xfi=xfin)[j], 0, 1.,label="")
 end
-plot!(plt, i -> sum(trajectory(A,testb,i,x0,M,xfi=xfin))/4, 0, 1.,label="",linecolor=:black, linestyle=:dash, linewidth=2)
+plot!(plt, i -> sum(trajectory(A,testb,i,x0,M,xfi=xfin))/4, 0, 1.,label="",linecolor=:black, linestyle=:dash, linewidth=2.5)
 plot!(plt, i -> 1, label = "", linecolor=:black, linewidth=2, linestyle=:solid)
 plot!()
 
@@ -100,18 +100,18 @@ plt2 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefo
 for j=1:4
 	plot!(plt2, i -> trajectory(A,testb,i,x0,M,t1=15.,xfi=xfin2)[j], 0, 15.,label="")
 end
-plot!(plt2, i -> sum(trajectory(A,testb,i,x0,M,t1=15.,xfi=xfin2))/4, 0, 15.,label="",linecolor=:black, linestyle=:dashdot, linewidth=2)
-plot!(plt2, i -> 1, label = "", linecolor=:black, linestyle=:solid, linewidth=2)
-plot!(plt2, [15,15],[-6,7.5],label = "",linecolor=:black, linestyle = :dash)
+plot!(plt2, i -> sum(trajectory(A,testb,i,x0,M,t1=15.,xfi=xfin2))/4, 0, 15.,label="",linecolor=:black, linestyle=:dashdot, linewidth=4)
+plot!(plt2, i -> 1, label = "", linecolor=:black, linestyle=:solid, linewidth=4)
+#plot!(plt2, [15,15],[-6,7.5],label = "",linecolor=:black, linestyle = :dash)
 savefig(plt2,"controlled.pdf")
 
 plt3 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14,legend=:bottomleft)
 for j=1:4
 	plot!(plt3, i -> trajectory(A,zeros(4,2),i,x0,M,xfi=xfin2)[j], 0, 15.,label="")
 end
-plot!(plt3, i -> sum(trajectory(A,zeros(4,2),i,x0,M,xfi=xfin2))/4, 0, 15.,label="Average state",linecolor=:black, linestyle=:dashdot, linewidth=2)
-plot!(plt3, i -> 1, label = "Desired threshold", linecolor=:black, linewidth=2, linestyle=:solid)
-plot!(plt3, [15,15],[-5,5],label = "",linecolor=:black, linestyle = :dash)
+plot!(plt3, i -> sum(trajectory(A,zeros(4,2),i,x0,M,xfi=xfin2))/4, 0, 15.,label="",linecolor=:black, linestyle=:dashdot, linewidth=4)
+plot!(plt3, i -> 1, label = "Desired threshold", linecolor=:black, linewidth=4, linestyle=:solid)
+plot!(plt3, [0,15],[1,1], label = "Average state", linecolor=:black, linewidth=2, linestyle=:dashdot)
 plot!()
 savefig(plt3,"autonomous.pdf")
 
@@ -124,9 +124,9 @@ plt3 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefo
 for j=1:4
 	plot!(plt3, i -> trajectory(A,randb,i,x0,M2,t1=15.,xfi=xfin3)[j], 0, 15.,label="")
 end
-plot!(plt3, i -> sum(trajectory(A,randb,i,x0,M2,t1=15.,xfi=xfin3))/4, 0, 15.,label="", linewidth=2, linecolor=:black, linestyle=:dashdot)
-plot!(plt3, i -> 1, label = "", linecolor=:black, linewidth=2, linestyle=:solid)
-plot!(plt3, [15,15],[-4,7.5],label = "",linecolor=:black, linestyle = :dash)
+plot!(plt3, i -> sum(trajectory(A,randb,i,x0,M2,t1=15.,xfi=xfin3))/4, 0, 15.,label="", linewidth=4, linecolor=:black, linestyle=:dashdot)
+plot!(plt3, i -> 1, label = "", linecolor=:black, linewidth=4, linestyle=:solid)
+#plot!(plt3, [15,15],[-4,7.5],label = "",linecolor=:black, linestyle = :solid)
 savefig(plt3,"randb.pdf")
 
 plt4 = plot(t -> u(t,A,randb,x0,M,tf=15.,xf = xfin3)[1],0.,15.,label="RAM 1",xlabel="t",ylabel="Input Signal",legendfontsize=14,tickfontsize=14,guidefontsize=14,linewidth=2,legend=:topleft,linecolor=:black,linestyle=:dash)
@@ -140,6 +140,9 @@ plt5 = plot(t -> quadgk(a -> ninp_rand(a),0.,t)[1],0.,15.,label="RAM",linestyle=
 ninp_opt(t) = (u(t,A,testb,x0,M,tf=15.,xf = xfin2)[1])^2 + (u(t,A,testb,x0,M,tf=15.,xf = xfin2)[2])^2
 plot!(plt5,t -> quadgk(a -> ninp_opt(a),0.,t)[1],0.,15.,label="Flux",linestyle=:solid,linecolor=:black,linewidth=2)
 savefig(plt5,"energies.pdf")
+
+
+
 
 @time b2 = pgm_max_sync(A,b1,1.)
 
