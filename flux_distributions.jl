@@ -5,7 +5,6 @@ using CSV, Plots, DataFrames, DelimitedFiles
 A = Float64.(Matrix(CSV.read("powernet.csv";header=false))) - I
 
 #@time Phi = flow_matrix(A)
-#takes about an hour... not bad?.. (that's including compilation)
 
 #@time lambda, v = eigen(Phi)
 

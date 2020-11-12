@@ -523,3 +523,28 @@ function med_nested_pgm(A,B0,x0,eta,nD;tol=1e-5,initstep=0.01)
 	end
 	return B1,numits
 end
+
+function lambdamax(A,B;t0=0.,t1=1.)
+	mid = reshape(B,length(A[:,1]),Int64(length(B)/length(A[:,1])))
+	u,v = eigen(gramian(A,mid,t0,t1))
+	l = maximum(u)
+	return l
+end
+
+function optimal_var_state(B,A,eta,x0;t0=0.,t1=1.)
+	gram = gramian(A,B,t0,t1)
+	u,v = eigen(gram)
+	l = maximum(u)
+	index = 0
+	for i=1:length(u)
+		if u[i] == l
+			index = i
+		end
+	end
+
+	omega = v[:,index]
+
+	x = exp(A*(t1-t0))*x0
+	x += eta.^(1/2) *omega
+	return x
+end

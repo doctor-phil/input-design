@@ -62,7 +62,7 @@ testb5 = [ v[:,3] v[:,4] ]
 @show min_energy(testb2,A,x0,eta)
 
 obj(x) = gtilde1(A,x,x0)
-@time b1, ob, nits = general_objective_pgm(obj,A,B0,1.;return_its=true)
+#@time b1, ob, nits = general_objective_pgm(obj,A,B0,1.;return_its=true)
 @show b1 = sphere_projection(b1,1+1e-8)
 obj2(x) = gtilde2(A,x,x0)
 @time b2, ob, nits = general_objective_pgm(obj2,A,B0,1.;return_its=true)
@@ -103,7 +103,7 @@ end
 plot!(plt2, i -> sum(trajectory(A,testb,i,x0,M,t1=15.,xfi=xfin2))/4, 0, 15.,label="",linecolor=:black, linestyle=:dashdot, linewidth=4)
 plot!(plt2, i -> 1, label = "", linecolor=:black, linestyle=:solid, linewidth=4)
 #plot!(plt2, [15,15],[-6,7.5],label = "",linecolor=:black, linestyle = :dash)
-savefig(plt2,"controlled.pdf")
+savefig(plt2,"controlled_avg.pdf")
 
 plt3 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14,legend=:bottomleft)
 for j=1:4
@@ -113,7 +113,7 @@ plot!(plt3, i -> sum(trajectory(A,zeros(4,2),i,x0,M,xfi=xfin2))/4, 0, 15.,label=
 plot!(plt3, i -> 1, label = "Desired threshold", linecolor=:black, linewidth=4, linestyle=:solid)
 plot!(plt3, [0,15],[1,1], label = "Average state", linecolor=:black, linewidth=2, linestyle=:dashdot)
 plot!()
-savefig(plt3,"autonomous.pdf")
+savefig(plt3,"autonomous_avg.pdf")
 
 using Random
 Random.seed!(123)
@@ -127,41 +127,15 @@ end
 plot!(plt3, i -> sum(trajectory(A,randb,i,x0,M2,t1=15.,xfi=xfin3))/4, 0, 15.,label="", linewidth=4, linecolor=:black, linestyle=:dashdot)
 plot!(plt3, i -> 1, label = "", linecolor=:black, linewidth=4, linestyle=:solid)
 #plot!(plt3, [15,15],[-4,7.5],label = "",linecolor=:black, linestyle = :solid)
-savefig(plt3,"randb.pdf")
+savefig(plt3,"randb_avg.pdf")
 
 plt4 = plot(t -> u(t,A,randb,x0,M,tf=15.,xf = xfin3)[1],0.,15.,label="RAM 1",xlabel="t",ylabel="Input Signal",legendfontsize=14,tickfontsize=14,guidefontsize=14,linewidth=2,legend=:topleft,linecolor=:black,linestyle=:dash)
 plot!(plt4,t -> u(t,A,randb,x0,M,tf=15.,xf = xfin3)[2],0.,15.,label="RAM 2",linestyle=:dashdot,linewidth=2,linecolor=:black)
 plot!(plt4,t -> u(t,A,testb,x0,M,tf=15.,xf = xfin2)[1],0.,15.,label="Flux 1 & 2",linestyle=:solid,linewidth=2,linecolor=:black)
-savefig(plt4,"inputs.pdf")
-
+savefig(plt4,"inputs_avg.pdf")
 
 ninp_rand(t) = (u(t,A,randb,x0,M,tf=15.,xf = xfin3)[1])^2 + (u(t,A,randb,x0,M,tf=15.,xf = xfin3)[2])^2
 plt5 = plot(t -> quadgk(a -> ninp_rand(a),0.,t)[1],0.,15.,label="RAM",linestyle=:dash,legend=:topleft,linecolor=:black,linewidth=2,ylabel="Cumulative Input Energy",xlabel="t",legendfontsize=14,tickfontsize=14,guidefontsize=14)
 ninp_opt(t) = (u(t,A,testb,x0,M,tf=15.,xf = xfin2)[1])^2 + (u(t,A,testb,x0,M,tf=15.,xf = xfin2)[2])^2
-plot!(plt5,t -> quadgk(a -> ninp_opt(a),0.,t)[1],0.,15.,label="Flux",linestyle=:solid,linecolor=:black,linewidth=2)
-savefig(plt5,"energies.pdf")
-
-
-
-
-@time b2 = pgm_max_sync(A,b1,1.)
-
-@show b2
-
-@show energy(xf,x0,pinv_gramian(A,b1))
-@show energy(xf,x0,pinv_gramian(A,b2))
-
-plot(t -> u(t,A,b1,x0)[1],0.,1.)
-plot!(t -> u(t,A,b2,x0)[1],0.,1.)
-
-plot(t -> quadgk(x -> norm(u(x,A,b1,x0)),0,t)[1],0.,1.)
-plot!(t -> quadgk(x -> norm(u(x,A,b2,x0)),0,t)[1],0.,1.)
-
-plot(t -> norm_input(u,xf,x0,t,A,b1),0.,1.)
-plot!(t -> norm_input(u,xf,x0,t,A,b2),0.,1.)
-
-plot()
-for i=1:4
-	plot!(t-> trajectory(A,b2,t,x0)[i],0,1)
-end
-plot!()
+plot!(plt5,t -> quadgk(a -> ninp_opt(a),0.,t)[1],0.1,15.,label="Flux",linestyle=:solid,linecolor=:black,linewidth=2)
+savefig(plt5,"energies_avg.pdf")
