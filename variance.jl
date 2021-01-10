@@ -60,3 +60,48 @@ plt5 = plot(t -> quadgk(a -> ninp_rand(a),0.,t)[1],0.,15.,label="RAM",linestyle=
 ninp_opt(t) = (u(t,A,testb,x0,M,tf=15.,xf = xfin)[1])^2
 plot!(plt5,t -> quadgk(a -> ninp_opt(a),0.,t)[1],0.1,15.,label="Flux",linestyle=:solid,linecolor=:black,linewidth=2)
 savefig(plt5,"energies_var.pdf")
+
+
+
+using CSV
+eta = 34
+A = -laplacian(Float64.(Matrix(CSV.read("karate.csv";header=false))))
+Random.seed!(12345)
+randb = rand(length(A[1,:]),1)
+x0 = rand(length(A[1,:]))
+M = pinv(gramian(A,randb,0,1.5))
+xfin_cel = optimal_var_state(randb,A,eta,x0,t0=0,t1=1.5)
+plt4 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+for j=1:length(A[1,:])
+	plot!(plt4, i -> trajectory(A,randb,i,x0,M,t1=1.5,xfi=xfin_cel)[j], 0, 1,label="")
+end
+
+plot!()
+
+eta = 34
+A = -laplacian(Float64.(Matrix(CSV.read("karate.csv";header=false))))
+Random.seed!(12345)
+randb = rand(length(A[1,:]),1)
+x0 = rand(length(A[1,:]))
+M = pinv(gramian(A,randb,0,1.5))
+xfin_cel = optimal_var_state(randb,A,eta,x0,t0=0,t1=1.5)
+plt5 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+for j=1:length(A[1,:])
+	plot!(plt5, i -> trajectory(A,zeros(34),i,x0,M,t1=1.5,xfi=xfin_cel)[j], 0, 1,label="")
+end
+
+plot!()
+
+eta = 500
+A = -laplacian(Float64.(Matrix(CSV.read("karate.csv";header=false))))
+Random.seed!(12345)
+testb = max_eigvec(flow_matrix(A,a=0.,b=1.5))
+x0 = rand(length(A[1,:]))
+M = pinv(gramian(A,testb,0,1.5))
+xfin_cel = optimal_var_state(testb,A,eta,x0,t0=0,t1=1.5)
+plt3 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+for j=1:length(A[1,:])
+	plot!(plt3, i -> trajectory(A,testb,i,x0,M,t1=1.5,xfi=xfin_cel)[j], 0, 1.5,label="")
+end
+
+plot!()

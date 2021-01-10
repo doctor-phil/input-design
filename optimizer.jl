@@ -534,7 +534,7 @@ end
 function optimal_var_state(B,A,eta,x0;t0=0.,t1=1.)
 	gram = gramian(A,B,t0,t1)
 	u,v = eigen(gram)
-	l = maximum(u)
+	l = maximum(real.(u))
 	index = 0
 	for i=1:length(u)
 		if u[i] == l
@@ -542,9 +542,43 @@ function optimal_var_state(B,A,eta,x0;t0=0.,t1=1.)
 		end
 	end
 
-	omega = v[:,index]
+	omega = real.(v[:,index])
 
 	x = exp(A*(t1-t0))*x0
 	x += eta.^(1/2) *omega
 	return x
+end
+
+function laplacian(A)
+	L = zeros(size(A))
+	L[diagind(L)] = sum(A,dims=1)
+	L -= A
+	return L
+end
+
+function max_eigvec(A)
+	u,v = eigen(A)
+	l = maximum(real.(u))
+	index = 0
+	for i=1:length(u)
+		if u[i] == l
+			index = i
+		end
+	end
+
+	omega = real.(v[:,index])
+
+	return omega
+end
+
+function len(l,M,xf)
+	n = length(A[1,:])
+	D = I - (1/n)*ones(n,n)
+	H = (M - l*D)
+	if rank(H) == n
+		x = inv(H)*M*xf
+	else
+		x = zeros(n)
+	end
+	return norm(D*x)
 end
