@@ -41,17 +41,15 @@ function median_projector(x,eta)		#projection onto C = {x in R^n | median(x) >= 
 	return(xnew)
 end
 
-function gradient(func,x,h=1e-8)		# fixed differences
-	it = 1
-	n = size(x,1)
-	grad = Float64[]
-	while it <= n
-		xh = copy(x)
-		xh[it] = copy(x[it]) + h
-		append!(grad,(func(xh) - func(x)))
-		it += 1
-	end
-	return grad .* (1/h)
+function gradient(func,x;h=1e-12) #cfd
+    e = zeros(length(x))
+    grad = zeros(length(x))
+    for i=1:length(x)
+        e[i] = h
+        grad[i] = (func(x .+ e) - func(x .- e)) / (2*h)
+        e[i] = 0.
+    end
+    return grad
 end
 
 function pgd_optimizer(objective, projector, state0; max_step_size = 1e-5, crit = 1e-5, maxit = 100000)
@@ -242,7 +240,7 @@ function control_pinv(x0,C)
 	return pinv(C) * x0
 end
 
-function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,return_its=false)
+function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,verbose=false)
 	M = nD + 1e-10
 	B1 = sphere_projection(B0,M)
 	B1V = reshape(B1,length(B0),1)
@@ -250,8 +248,11 @@ function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,r
 	m = Int(length(B0)/n)
 	costheta = 0.
 	numits = 0
-	while 1-costheta > tol
+	step = copy(initstep)
+	cuttings = 0
+	while 1-costheta > tol && cuttings < 100
 		step = copy(initstep)
+		cuttings = 0
 		B0 = copy(B1)
 		B0V = reshape(B0,length(B0),1)
 		grad = gradient(obj,B0V)		#fixed differences
@@ -259,11 +260,22 @@ function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,r
 		inter = B0V .- step*proj_grad
 		B1 = sphere_projection(reshape(inter,n,m),M)
 		B1V = reshape(B1,length(B1),1)
+
+		while obj(B1V) > obj(B0V) || obj(B1V) < 0
+			step /= 1.68
+			cuttings += 1
+			inter = B0V .- step*proj_grad
+			B1 = sphere_projection(reshape(inter,n,m),M)
+			B1V = reshape(B1,length(B1),1)
+		end
+		if verbose
+			@show obj(B1V)
+		end
 		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
 		numits+=1
 	end
-	if return_its
-		return B1,obj(round.(B1V,digits=8)),numits
+	if verbose
+		return B1,obj(round.(B1V,digits=8)),numits,cuttings,step
 	else
 		return B1,obj(round.(B1V,digits=8))
 	end
@@ -571,14 +583,77 @@ function max_eigvec(A)
 	return omega
 end
 
-function len(l,M,xf)
-	n = length(A[1,:])
-	D = I - (1/n)*ones(n,n)
-	H = (M - l*D)
-	if rank(H) == n
-		x = inv(H)*M*xf
-	else
-		x = zeros(n)
+function max_eigvec(A,B)
+	u,v = eigen(A,B)
+	l = maximum(real.(u))
+	index = 0
+	for i=1:length(u)
+		if u[i] == l
+			index = i
+		end
 	end
-	return norm(D*x)
+
+	omega = real.(v[:,index])
+
+	return omega
+end
+
+function len(l,M,xf)
+	n = length(M[1,:])
+	D = I - (1/n)*ones(n,n)
+	H = (M - l*(D^2))
+	if rank(H) == n
+		x = H\(M*xf)
+	else
+		x = ones(n).*Inf
+	end
+	return norm(D*x)^2
+end
+
+function var_state(lambda,M,xf)
+	n = length(M[1,:])
+	D = I - (1/n)*ones(n,n)
+	if fakerank(M-lambda*(D^2)) == n
+		xs = (M - lambda*(D^2)) \ (M*xf)
+	else
+		xs = zeros(4)
+	end
+	return xs
+end
+
+function var_solver(M,xf,eta)
+	n = length(M[1,:])
+	D = (I - (1/n)*ones(n,n))^2
+	u,v = eigen(M,D)
+	u = ifelse.(u .< 0, Inf, u)
+	mu = minimum(u)
+	f(x) = len(x,M,xf)-eta
+	interval = 1e-20
+	while isnan(f(mu-interval))
+		interval *=10
+	end
+	l = find_zero(f,(0,mu-interval))
+	x = var_state(l,M,xf)
+	return l,x
+end
+
+function var_energy_vec(b,A,x0,eta;t0=0.,t1=1.)
+	n = length(A[1,:])
+	B = reshape(b,n,Int64(length(b)/n))
+	M = inverse_gramian(A,B,t0,t1)
+	xf = exp(A*(t1-t0))*x0
+	l,x = var_solver(M,xf,eta)
+	e = energy(x,x0,M)
+	return e
+end
+
+function var_eig(b,A,eta;t0=0.,t1=1.)
+	n = length(A[1,:])
+	B = reshape(b,n,Int64(length(b)/n))
+	M = inverse_gramian(A,B,t0,t1)
+	D = (I - (1/n)*ones(n,n))^2
+	u,v = eigen(M,D)
+	u = ifelse.(u .< 0, Inf, u)
+	mu = minimum(u)
+	return mu
 end

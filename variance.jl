@@ -95,7 +95,7 @@ plot!()
 eta = 500
 A = -laplacian(Float64.(Matrix(CSV.read("karate.csv";header=false))))
 Random.seed!(12345)
-testb = max_eigvec(flow_matrix(A,a=0.,b=1.5))
+testb = max_eigvec(flow_matrix(A,a=0.,b=1))
 x0 = rand(length(A[1,:]))
 M = pinv(gramian(A,testb,0,1.5))
 xfin_cel = optimal_var_state(testb,A,eta,x0,t0=0,t1=1.5)
@@ -105,3 +105,46 @@ for j=1:length(A[1,:])
 end
 
 plot!()
+
+
+#for real this time
+Random.seed!(12345)
+init = sphere_projection(rand(4,1).*2 .- 1,1)
+
+A = [-0.5 0 0 0 ; -0.5 0 0 0 ; 0.3 0.5 0 0 ; 0 0 1 0. ];
+x0 = rand(length(A[1,:]))
+xf = exp(A)*x0
+eta = 5
+M1 = pinv(gramian(A,init,0,1))
+l,xfin_cel = var_solver(M1,xf,eta)
+plt3 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+for j=1:length(A[1,:])
+	plot!(plt3, i -> trajectory(A,init,i,x0,M1,t1=1,xfi=xfin_cel)[j], 0, 1,label="")
+end
+
+plot!()
+
+Random.seed!(12345)
+init = sphere_projection(rand(4,1).*2 .- 1,1)
+
+A = [-0.5 0 0 0 ; -0.5 0 0 0 ; 0.3 0.5 0 0 ; 0 0 1 0. ];
+x0 = rand(length(A[1,:]))
+xf = exp(A)*x0
+eta = 5
+M2 = pinv(gramian(A,testb,0,1))
+l,xfin_cel2 = var_solver(M2,xf,eta)
+plt3 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+for j=1:length(A[1,:])
+	plot!(plt3, i -> trajectory(A,testb,i,x0,M2,t1=1,xfi=xfin_cel2)[j], 0, 1,label="")
+end
+
+plot!()
+
+plt4 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+plot!(plt4, i -> u(i,A,init,x0,M1,xf=xfin_cel)[1],0,1)
+plot!(plt4, i -> u(i,A,testb,x0,M,xf=xfin_cel2)[1],0,1)
+
+ninp_rand(t) = (u(t,A,init,x0,M1,tf=1.,xf = xfin_cel)[1])^2
+plt5 = plot(t -> quadgk(a -> ninp_rand(a),0.,t)[1],0.,1,label="RAM",linestyle=:dash,legend=:topleft,linecolor=:black,linewidth=2,ylabel="Cumulative Input Energy",xlabel="t",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+ninp_opt(t) = (u(t,A,testb,x0,M2,tf=1.,xf = xfin_cel2)[1])^2
+plot!(plt5,t -> quadgk(a -> ninp_opt(a),0.,t)[1],0,1,label="Flux",linestyle=:solid,linecolor=:black,linewidth=2)
