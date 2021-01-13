@@ -1,4 +1,4 @@
-using ForwardDiff, Statistics, QuadGK, LinearAlgebra, Printf
+using ForwardDiff, Statistics, QuadGK, LinearAlgebra, Printf, Roots
 
 function inverse_gramian(A,B,a=0.,b=1.)
 	W,err = quadgk(x -> exp(A*x)*(B*(B'))*(exp(A*x)'),a,b)		#compute reachability gramian
@@ -252,7 +252,6 @@ function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,v
 	cuttings = 0
 	while 1-costheta > tol && cuttings < 100
 		step = copy(initstep)
-		cuttings = 0
 		B0 = copy(B1)
 		B0V = reshape(B0,length(B0),1)
 		grad = gradient(obj,B0V)		#fixed differences
@@ -260,15 +259,16 @@ function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,v
 		inter = B0V .- step*proj_grad
 		B1 = sphere_projection(reshape(inter,n,m),M)
 		B1V = reshape(B1,length(B1),1)
-
-		while obj(B1V) > obj(B0V) || obj(B1V) < 0
+		while obj(B1V) > obj(B0V)
 			step /= 1.68
 			cuttings += 1
 			inter = B0V .- step*proj_grad
 			B1 = sphere_projection(reshape(inter,n,m),M)
 			B1V = reshape(B1,length(B1),1)
+			@show B1V
 		end
 		if verbose
+			@show B1V
 			@show obj(B1V)
 		end
 		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
@@ -601,7 +601,7 @@ end
 function len(l,M,xf)
 	n = length(M[1,:])
 	D = I - (1/n)*ones(n,n)
-	H = (M - l*(D^2))
+	H = (M - l*D)
 	if rank(H) == n
 		x = H\(M*xf)
 	else
@@ -613,10 +613,14 @@ end
 function var_state(lambda,M,xf)
 	n = length(M[1,:])
 	D = I - (1/n)*ones(n,n)
-	if fakerank(M-lambda*(D^2)) == n
-		xs = (M - lambda*(D^2)) \ (M*xf)
+	if fakerank(M-lambda*D) == n
+		xs = (M - lambda*D) \ (M*xf)
 	else
 		xs = zeros(4)
+		@show lambda
+		@show eigen(M,D)
+		@show M
+		error("Something's going on with the generalized eigenvalues")
 	end
 	return xs
 end
@@ -628,13 +632,17 @@ function var_solver(M,xf,eta)
 	u = ifelse.(u .< 0, Inf, u)
 	mu = minimum(u)
 	f(x) = len(x,M,xf)-eta
-	interval = 1e-20
-	while isnan(f(mu-interval))
+	interval = 1e-25
+	while isnan(f(mu-interval)) && !isinf(interval) && mu-(interval*10) > 0
 		interval *=10
 	end
-	l = find_zero(f,(0,mu-interval))
-	x = var_state(l,M,xf)
-	return l,x
+	if !isinf(interval)
+		l = find_zero(f,(0,mu-interval))
+		x = var_state(l,M,xf)
+		return l,x
+	else
+		error("Interval is infinite")
+	end
 end
 
 function var_energy_vec(b,A,x0,eta;t0=0.,t1=1.)

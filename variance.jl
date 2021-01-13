@@ -131,20 +131,31 @@ A = [-0.5 0 0 0 ; -0.5 0 0 0 ; 0.3 0.5 0 0 ; 0 0 1 0. ];
 x0 = rand(length(A[1,:]))
 xf = exp(A)*x0
 eta = 5
+testb, obj = general_objective_pgm(x -> var_energy_vec(x,A,x0,eta),A,init,1,verbose=true)
 M2 = pinv(gramian(A,testb,0,1))
 l,xfin_cel2 = var_solver(M2,xf,eta)
 plt3 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
 for j=1:length(A[1,:])
-	plot!(plt3, i -> trajectory(A,testb,i,x0,M2,t1=1,xfi=xfin_cel2)[j], 0, 1,label="")
+	plot!(plt3, i -> trajectory(A,zeros(4),i,x0,M2,t1=1,xfi=xfin_cel2)[j], 0, 1,label="")
 end
 
 plot!()
 
 plt4 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
 plot!(plt4, i -> u(i,A,init,x0,M1,xf=xfin_cel)[1],0,1)
-plot!(plt4, i -> u(i,A,testb,x0,M,xf=xfin_cel2)[1],0,1)
+plot!(plt4, i -> u(i,A,testb,x0,M2,xf=xfin_cel2)[1],0,1)
 
 ninp_rand(t) = (u(t,A,init,x0,M1,tf=1.,xf = xfin_cel)[1])^2
 plt5 = plot(t -> quadgk(a -> ninp_rand(a),0.,t)[1],0.,1,label="RAM",linestyle=:dash,legend=:topleft,linecolor=:black,linewidth=2,ylabel="Cumulative Input Energy",xlabel="t",legendfontsize=14,tickfontsize=14,guidefontsize=14)
 ninp_opt(t) = (u(t,A,testb,x0,M2,tf=1.,xf = xfin_cel2)[1])^2
 plot!(plt5,t -> quadgk(a -> ninp_opt(a),0.,t)[1],0,1,label="Flux",linestyle=:solid,linecolor=:black,linewidth=2)
+
+Random.seed!(1)
+init2 = sphere_projection(rand(4,1),1)
+testb, obj = general_objective_pgm(x -> var_energy_vec(x,A,x0,eta),A,init2,1,verbose=true)
+M3 = pinv(gramian(A,testb,0,1))
+l,xfin_cel2 = var_solver(M2,xf,eta)
+
+plt4 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+plot!(plt4, i -> u(i,A,init,x0,M1,xf=xfin_cel)[1],0,1)
+plot!(plt4, i -> u(i,A,testb,x0,M,xf=xfin_cel2)[1],0,1)
