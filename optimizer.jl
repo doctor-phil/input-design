@@ -265,7 +265,6 @@ function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,v
 			inter = B0V .- step*proj_grad
 			B1 = sphere_projection(reshape(inter,n,m),M)
 			B1V = reshape(B1,length(B1),1)
-			@show B1V
 		end
 		if verbose
 			@show B1V
@@ -610,22 +609,27 @@ function len(l,M,xf)
 	return norm(D*x)^2
 end
 
-function var_state(lambda,M,xf)
+function var_state(lambda,M,xf,eta)
 	n = length(M[1,:])
 	D = I - (1/n)*ones(n,n)
 	if fakerank(M-lambda*D) == n
 		xs = (M - lambda*D) \ (M*xf)
 	else
-		xs = zeros(4)
-		@show lambda
-		@show eigen(M,D)
-		@show M
-		error("Something's going on with the generalized eigenvalues")
+		u,v = eigen(M,D)
+		u = ifelse.(u .< 0, Inf, u)
+		mu,i = findmin(u)
+		v1 = v[:,i]
+		f(x) = norm(D*(xf + x*v1))^2 - eta
+		ub = eta*(norm(xf)+norm(v1))
+		mult = find_zero(f,[0,ub])
+		xs = xf + mult*v1
 	end
 	return xs
 end
 
 function var_solver(M,xf,eta)
+	# returns the optimal state for variance control, along with its
+	# corresponding lagrange multiplier
 	n = length(M[1,:])
 	D = (I - (1/n)*ones(n,n))^2
 	u,v = eigen(M,D)
@@ -637,15 +641,23 @@ function var_solver(M,xf,eta)
 		interval *=10
 	end
 	if !isinf(interval)
-		l = find_zero(f,(0,mu-interval))
-		x = var_state(l,M,xf)
-		return l,x
+		l = try find_zero(f,(0,mu-interval)) catch; 0. end
+		if l==0
+			l=mu
+		end
 	else
-		error("Interval is infinite")
+		l = mu
 	end
+
+	x = var_state(l,M,xf,eta)
+	return l,x
 end
 
+
 function var_energy_vec(b,A,x0,eta;t0=0.,t1=1.)
+	# computes minimum energy required to steer the variance
+	# from controllers b (vectorized/column stacked input matrix)
+	# used as an objective by the npgm
 	n = length(A[1,:])
 	B = reshape(b,n,Int64(length(b)/n))
 	M = inverse_gramian(A,B,t0,t1)
@@ -656,6 +668,8 @@ function var_energy_vec(b,A,x0,eta;t0=0.,t1=1.)
 end
 
 function var_eig(b,A,eta;t0=0.,t1=1.)
+	# returns the smallest nonnegative generalized eigenvalue of M and D
+	# M is inverse gramian, D is `de-meaning` matrix
 	n = length(A[1,:])
 	B = reshape(b,n,Int64(length(b)/n))
 	M = inverse_gramian(A,B,t0,t1)
