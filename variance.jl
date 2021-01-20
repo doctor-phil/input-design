@@ -67,13 +67,13 @@ using CSV
 eta = 34
 A = -laplacian(Float64.(Matrix(CSV.read("karate.csv";header=false))))
 Random.seed!(12345)
-randb = rand(length(A[1,:]),1)
+randb = rand(length(A[1,:]),5)
 x0 = rand(length(A[1,:]))
-M = pinv(gramian(A,randb,0,1.5))
-xfin_cel = optimal_var_state(randb,A,eta,x0,t0=0,t1=1.5)
+M = inv(gramian(A,randb,0,3))
+xfin_cel = optimal_var_state(randb,A,eta,x0,t0=0,t1=3)
 plt4 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
 for j=1:length(A[1,:])
-	plot!(plt4, i -> trajectory(A,randb,i,x0,M,t1=1.5,xfi=xfin_cel)[j], 0, 1,label="")
+	plot!(plt4, i -> trajectory(A,randb,i,x0,M,t1=3,xfi=xfin_cel)[j], 0, 3, label="")
 end
 
 plot!()
@@ -161,3 +161,69 @@ l,xfin_cel2 = var_solver(M2,xf,eta)
 plt4 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
 plot!(plt4, i -> u(i,A,init,x0,M1,xf=xfin_cel)[1],0,1)
 plot!(plt4, i -> u(i,A,testb,x0,M,xf=xfin_cel2)[1],0,1)
+
+#variance control for zachary's karate club, laplacian dynamics (DeGroot)
+eta = 1
+A = -laplacian(Float64.(Matrix(CSV.read("karate.csv";header=false))))
+Random.seed!(12345)
+randb = rand(length(A[1,:]),10)*2 .- 1
+x0 = rand(length(A[1,:]))
+M = inv(gramian(A,randb,0,3))
+xf = exp(3*A)*x0
+l,xfin_cel = var_solver(M,xf,eta)
+plt4 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+for j=1:length(A[1,:])	#plot the autonomous dynamics
+	@time plot!(plt4, i -> trajectory(A,zeros(34,10),i,x0,M,t1=3,xfi=xfin_cel)[j], 0, 3, label="")
+end
+
+plot!()
+savefig(plt4,"karate_autonomous.pdf")
+
+eta = 1
+A = -laplacian(Float64.(Matrix(CSV.read("karate.csv";header=false))))
+Random.seed!(12345)
+randb = sphere_projection(rand(length(A[1,:]),10)*2 .- 1,10.0000001)
+x0 = rand(length(A[1,:]))
+M = inv(gramian(A,randb,0,3))
+xf = exp(3*A)*x0
+l,xfin_cel = var_solver(M,xf,eta)
+plt5 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+for j=1:length(A[1,:])	#plot RAM dynamics
+	@time plot!(plt5, i -> trajectory(A,randb,i,x0,M,t1=3,xfi=xfin_cel)[j], 0, 3, label="")
+end
+
+plot!()
+savefig(plt5,"karate_ram_variance.pdf")
+
+eta = 1
+A = -laplacian(Float64.(Matrix(CSV.read("karate.csv";header=false))))
+Random.seed!(12345)
+randb = sphere_projection(rand(length(A[1,:]),10)*2 .- 1,10.0000001)
+x0 = rand(length(A[1,:]))
+xf = exp(3*A)*x0
+testb4, obj = general_objective_pgm(x -> var_energy_vec(x,A,x0,eta),A,reshape(randb,340,1),1,verbose=true)
+testb = reshape(testb4,34,10)
+M = inv(gramian(A,testb,0,3))
+l,xfin_cel = var_solver(M,xf,eta)
+plt5 = plot(xlabel="t", ylabel="State",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+for j=1:length(A[1,:])	#plot RAM dynamics
+	@time plot!(plt5, i -> trajectory(A,testb,i,x0,M,t1=3,xfi=xfin_cel)[j], 0, 3, label="")
+end
+
+plot!()
+savefig(plt5,"karate_pgm_variance.pdf")
+
+
+M1 = inv(gramian(A,randb,0,3))
+xf = exp(3*A)*x0
+l,xfin_cel1 = var_solver(M,xf,eta)
+
+M2 = inv(gramian(A,testb,0,3))
+xf = exp(3*A)*x0
+l,xfin_cel2 = var_solver(M2,xf,eta)	#they're the same wtf
+
+ninp_rand(t) = norm(u(t,A,randb,x0,M1,tf=3.,xf = xfin_cel1)[:])^2
+plt5 = plot(t -> quadgk(a -> ninp_rand(a),0.,t)[1],0.,3,label="RAM",linestyle=:dash,legend=:topleft,linecolor=:black,linewidth=2,ylabel="Cumulative Input Energy",xlabel="t",legendfontsize=14,tickfontsize=14,guidefontsize=14)
+ninp_opt(t) = norm(u(t,A,testb,x0,M2,tf=3.,xf = xfin_cel2)[:])^2
+plot!(plt5,t -> quadgk(a -> ninp_opt(a),0.,t)[1],0,3,label="NPGM",linestyle=:solid,linecolor=:black,linewidth=2)
+savefig(plt5,"cumulative_var_energy.pdf")

@@ -270,7 +270,6 @@ function general_objective_pgm(obj,A,B0,nD;tol=1e-20,initstep=0.01,t0=0.,t1=1.,v
 			@show B1V
 			@show obj(B1V)
 		end
-		costheta = dot(B1V,B0V) / (norm(B1V)*norm(B0V))
 		numits+=1
 	end
 	if verbose
