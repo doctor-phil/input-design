@@ -1,6 +1,6 @@
 include("./optimizer.jl")
 
-using Random, Plots
+using Random, Plots, CSV
 
 Random.seed!(12345)
 init = sphere_projection(rand(4,1).*2 .- 1,1)
